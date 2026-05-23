@@ -1,0 +1,620 @@
+/* ─────────────────────────────────────────────────────────
+   OLD BLOOD // NEW BLOOD — design system
+   Shared skeleton + two era skins (old, new)
+   ───────────────────────────────────────────────────────── */
+
+:root {
+  /* Old Blood — 1995. Cult-classic Hong Kong-cinema action poster:
+     deep crimson, antique gold, emerald jade, cobalt, bone cream.
+     Less synthwave-VHS, more painted movie-poster + arcade marquee. */
+  --ob-ink: oklch(0.14 0.02 30);
+  --ob-ink-2: oklch(0.20 0.03 30);
+  --ob-bone: oklch(0.94 0.04 85);
+  --ob-bone-2: oklch(0.86 0.05 80);
+  --ob-blood: oklch(0.52 0.22 25);
+  --ob-blood-2: oklch(0.40 0.20 25);
+  --ob-gold: oklch(0.78 0.16 85);
+  --ob-gold-2: oklch(0.62 0.14 80);
+  --ob-jade: oklch(0.55 0.14 165);
+  --ob-cobalt: oklch(0.45 0.18 250);
+  --ob-cyan: oklch(0.78 0.14 200);
+  --ob-magenta: var(--ob-gold);   /* legacy alias → gold for poster feel */
+  --ob-yellow: var(--ob-gold);
+
+  /* New Blood — 2026. MK2 cinematography: stormy slate blue,
+     lightning white, ash gray, blood red. Choral-gothic blockbuster. */
+  --nb-ink: oklch(0.08 0.015 250);
+  --nb-ink-2: oklch(0.14 0.025 245);
+  --nb-line: oklch(0.28 0.025 245);
+  --nb-bone: oklch(0.96 0.005 270);
+  --nb-mute: oklch(0.58 0.02 245);
+  --nb-steel: oklch(0.40 0.04 245);
+  --nb-storm: oklch(0.22 0.05 245);
+  --nb-lightning: oklch(0.96 0.02 240);
+  --nb-red: oklch(0.55 0.24 27);
+  --nb-red-2: oklch(0.40 0.22 27);
+  --nb-blood: oklch(0.32 0.18 25);
+
+  /* Type */
+  --f-disp-old: "Bungee", "Arial Black", system-ui, sans-serif;
+  --f-disp-new: "Oswald", "Arial Narrow", system-ui, sans-serif;
+  --f-mono-old: "VT323", "Courier New", monospace;
+  --f-mono-new: "JetBrains Mono", "Courier New", monospace;
+  --f-body-new: "Inter", system-ui, sans-serif;
+
+  /* Skeleton tokens (shared geometry) */
+  --card-r: 6px;
+  --card-r-old: 4px;
+  --card-r-new: 2px;
+
+  /* Split intensity (driven by Tweaks: subtle | balanced | aggressive) */
+  --split: 1;            /* multiplier 0.5 / 1 / 1.6 */
+}
+
+/* ─────────────────────────────────────────────────────────
+   Base
+   ───────────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: #0a0908;
+  font-family: var(--f-body-new);
+  color: var(--nb-bone);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─────────────────────────────────────────────────────────
+   OLD BLOOD scope — .era-old or [data-era="old"]
+   1995 cult-classic Hong Kong cinema · ornate, painted,
+   theatrical. Gold + crimson + jade against deep ink.
+   ───────────────────────────────────────────────────────── */
+.era-old, [data-era="old"] {
+  background:
+    radial-gradient(ellipse at 50% 0%, oklch(0.40 0.16 60 / 0.55), transparent 55%),
+    radial-gradient(ellipse at 0% 100%, oklch(0.28 0.14 165 / 0.5), transparent 55%),
+    radial-gradient(ellipse at 100% 80%, oklch(0.42 0.20 25 / 0.6), transparent 55%),
+    radial-gradient(ellipse at 50% 50%, oklch(0.20 0.04 30) 0%, oklch(0.10 0.02 30) 100%);
+  color: var(--ob-bone);
+  font-family: var(--f-body-new);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle scanlines — texture, not dominant. */
+.era-old::before, [data-era="old"]::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px, transparent 2px,
+      rgba(0,0,0,calc(0.15 * var(--split))) 2px, rgba(0,0,0,calc(0.15 * var(--split))) 3px
+    );
+  pointer-events: none;
+  z-index: 2;
+  mix-blend-mode: multiply;
+}
+
+/* Tape tracking — preserved but quieter */
+.era-old::after, [data-era="old"]::after {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(to bottom,
+      transparent 0%, transparent 18%,
+      rgba(255,255,255,0.04) 18.5%, transparent 19%,
+      transparent 78%,
+      rgba(255,255,255,0.03) 78.5%, transparent 79.5%,
+      transparent 100%);
+  background-size: 100% 200%;
+  pointer-events: none;
+  z-index: 3;
+  animation: tracking calc(9s / var(--split, 1)) linear infinite;
+  opacity: calc(0.5 * var(--split));
+}
+@keyframes tracking {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 200%; }
+}
+
+/* Old display type */
+.ob-display {
+  font-family: var(--f-disp-old);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.ob-mono {
+  font-family: var(--f-mono-old);
+  letter-spacing: 0.04em;
+}
+.ob-chromatic {
+  text-shadow:
+    calc(-2px * var(--split)) 0 0 var(--ob-cyan),
+    calc(2px * var(--split)) 0 0 var(--ob-blood),
+    0 0 calc(8px * var(--split)) oklch(0.55 0.22 25 / 0.5);
+}
+
+/* Beveled/extruded display — for movie-poster lettering */
+.ob-beveled {
+  font-family: var(--f-disp-old);
+  text-shadow:
+    1px 1px 0 var(--ob-gold-2),
+    2px 2px 0 var(--ob-gold-2),
+    3px 3px 0 var(--ob-blood-2),
+    4px 4px 0 var(--ob-ink);
+}
+
+/* Old portrait frame */
+.ob-portrait {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      var(--ob-blood-2) 0 12px,
+      var(--ob-blood) 12px 24px
+    );
+  position: relative;
+  overflow: hidden;
+  border: 2px solid var(--ob-bone);
+  outline: 2px solid var(--ob-ink);
+  outline-offset: 0;
+}
+.ob-portrait::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 35%, oklch(0.20 0.02 30 / 0) 0%, oklch(0.10 0.02 30 / 0.7) 75%),
+    repeating-linear-gradient(to bottom, transparent 0 3px, rgba(0,0,0,0.18) 3px 4px);
+}
+
+/* ─────────────────────────────────────────────────────────
+   NEW BLOOD scope — .era-new or [data-era="new"]
+   2026 blockbuster · stormy slate, lightning white, blood red
+   ───────────────────────────────────────────────────────── */
+.era-new, [data-era="new"] {
+  background:
+    radial-gradient(ellipse at 50% -10%, oklch(0.42 0.10 245 / 0.55), transparent 55%),
+    radial-gradient(ellipse at 100% 100%, oklch(0.22 0.14 27 / 0.5), transparent 60%),
+    linear-gradient(180deg, oklch(0.10 0.025 245), oklch(0.06 0.015 250));
+  color: var(--nb-bone);
+  font-family: var(--f-body-new);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Sparse crosshair grid + faint lightning flash */
+.era-new::before, [data-era="new"]::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(to right, rgba(180,200,230,calc(0.03 * var(--split))) 1px, transparent 1px) 0 0 / 64px 64px,
+    linear-gradient(to bottom, rgba(180,200,230,calc(0.03 * var(--split))) 1px, transparent 1px) 0 0 / 64px 64px;
+  pointer-events: none;
+}
+.era-new::after, [data-era="new"]::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 30% 20%, oklch(0.95 0.02 240 / 0.06), transparent 35%);
+  pointer-events: none;
+}
+
+.nb-display {
+  font-family: var(--f-disp-new);
+  font-weight: 700;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+}
+.nb-condensed { font-stretch: condensed; }
+.nb-mono {
+  font-family: var(--f-mono-new);
+  letter-spacing: 0.04em;
+  font-weight: 400;
+}
+
+/* New portrait frame */
+.nb-portrait {
+  background:
+    radial-gradient(ellipse at 50% 30%, oklch(0.22 0.02 260) 0%, oklch(0.06 0.005 270) 80%);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--nb-line);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    inset 0 -40px 60px -20px oklch(0.45 0.20 27 / 0.45);
+}
+.nb-portrait::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, transparent 30%, oklch(0.50 0.22 27 / 0.18) 80%, oklch(0.55 0.24 27 / 0.4) 100%);
+}
+
+/* ─────────────────────────────────────────────────────────
+   Shared skeleton — duel card structure (used by both eras)
+   Portrait-optimized layout:
+     [top band] · [portrait image slot] · [bottom name band]
+   Era treatments overlay the portrait area only.
+   ───────────────────────────────────────────────────────── */
+.fighter-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  will-change: transform;
+  text-align: left;
+}
+.fighter-card .fc-portrait {
+  flex: 0 0 auto;
+  aspect-ratio: 4 / 5;
+  position: relative;
+  overflow: hidden;
+}
+.fighter-card .fc-portrait > image-slot,
+.fighter-card .fc-portrait > .fc-slot-fallback {
+  position: absolute; inset: 0;
+  display: block; width: 100%; height: 100%;
+  z-index: 1;
+}
+.fighter-card .fc-overlay {
+  position: absolute; inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.fighter-card .fc-chrome {
+  position: absolute; inset: 0;
+  z-index: 3;
+  display: flex; flex-direction: column; justify-content: space-between;
+  pointer-events: none;
+}
+.fighter-card .fc-chrome > * { pointer-events: auto; }
+
+/* Top band — thin tag/year strip */
+.fighter-card .fc-band-top {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 8px;
+  gap: 6px;
+}
+
+/* Bottom name band — sits BELOW the portrait, not over it */
+.fighter-card .fc-band-bot {
+  flex: 0 0 auto;
+  padding: 8px 10px 10px;
+  position: relative;
+}
+
+/* Silhouette placeholder — fills slot's empty state, era-treated */
+.silhouette {
+  position: absolute;
+  left: 50%; bottom: 0;
+  transform: translateX(-50%);
+  width: 78%;
+  height: 88%;
+  z-index: 1;
+  opacity: 0.55;
+}
+.silhouette-old {
+  background: var(--ob-ink);
+  -webkit-mask: var(--silhouette-svg) center bottom / contain no-repeat;
+          mask: var(--silhouette-svg) center bottom / contain no-repeat;
+  filter: drop-shadow(-2px 0 0 var(--ob-cyan)) drop-shadow(2px 0 0 var(--ob-magenta));
+}
+.silhouette-new {
+  background: linear-gradient(180deg, oklch(0.05 0.005 270) 0%, oklch(0.08 0.005 270) 100%);
+  -webkit-mask: var(--silhouette-svg) center bottom / contain no-repeat;
+          mask: var(--silhouette-svg) center bottom / contain no-repeat;
+}
+
+/* ─── Era treatment overlays — composed OVER the portrait image ─── */
+
+/* Old: halftone dot pattern + scanlines + chromatic vignette
+   — painted Hong Kong action-poster feel, not just VHS distortion */
+.fc-overlay-old::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    /* halftone print dots */
+    radial-gradient(circle at 1px 1px, rgba(0,0,0,calc(0.20 * var(--split,1))) 0.8px, transparent 1.2px) 0 0 / 4px 4px,
+    /* scanlines */
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 2px,
+      rgba(0,0,0,calc(0.20 * var(--split,1))) 2px 3px
+    );
+  mix-blend-mode: multiply;
+}
+.fc-overlay-old::after {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    /* corner gold vignette + red bottom wash */
+    radial-gradient(ellipse at 50% 50%, transparent 30%, oklch(0.18 0.12 25 / 0.50) 100%),
+    linear-gradient(180deg, oklch(0.50 0.16 85 / 0.10) 0%, transparent 30%, transparent 65%, oklch(0.32 0.22 25 / 0.40) 100%);
+  mix-blend-mode: screen;
+}
+.fc-tracking {
+  position: absolute; left: 0; right: 0; height: 12px;
+  background: linear-gradient(180deg, transparent, rgba(255,255,255,0.16), transparent);
+  mix-blend-mode: screen;
+  animation: fc-track calc(7s / var(--split,1)) linear infinite;
+}
+@keyframes fc-track {
+  0% { top: -20px; }
+  100% { top: 100%; }
+}
+/* RGB chromatic split — red on left, cyan on right (true VHS) */
+.fc-chromabar {
+  position: absolute; left: -3px; right: -3px;
+  height: 100%; top: 0;
+  background:
+    linear-gradient(90deg, transparent 0 calc(50% - 3px), oklch(0.55 0.22 25 / 0.20) calc(50% - 3px) calc(50% - 2px), transparent calc(50% - 2px) calc(50% + 2px), oklch(0.78 0.14 200 / 0.18) calc(50% + 2px) calc(50% + 3px), transparent calc(50% + 3px));
+  mix-blend-mode: screen;
+  opacity: calc(0.55 * var(--split,1));
+}
+
+/* New: cinematic chiaroscuro — deep storm vignette + lightning rim + blood pool */
+.fc-overlay-new::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg,
+      rgba(8,12,28,0.40) 0%,
+      transparent 25%,
+      transparent 70%,
+      oklch(0.14 0.06 25 / 0.45) 100%);
+}
+.fc-overlay-new::after {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    /* tight vignette */
+    radial-gradient(ellipse at 50% 45%, transparent 30%, rgba(0,0,0,0.75) 110%),
+    /* top-left lightning rim */
+    radial-gradient(circle at 20% 0%, oklch(0.95 0.02 240 / 0.20) 0%, transparent 25%);
+}
+.fc-grid-new {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(to right, rgba(180,200,230,0.04) 1px, transparent 1px) 0 0 / 20px 20px,
+    linear-gradient(to bottom, rgba(180,200,230,0.04) 1px, transparent 1px) 0 0 / 20px 20px;
+  mix-blend-mode: overlay;
+  opacity: calc(0.5 * var(--split,1));
+}
+/* Lightning streak — subtle white bolt accent */
+.fc-lightning {
+  position: absolute; top: 0; left: 18%; bottom: 0; width: 2px;
+  background: linear-gradient(180deg, transparent, oklch(0.96 0.02 240 / 0.25), transparent 60%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* Empty-state placeholder caption inside an unfilled slot */
+.fc-slot-empty {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  padding-bottom: 14px;
+  pointer-events: none;
+  z-index: 1;
+}
+.fc-slot-empty .fc-id-tag {
+  font-family: var(--f-mono-new);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: rgba(255,255,255,0.55);
+  background: rgba(0,0,0,0.5);
+  padding: 3px 6px;
+  border: 1px dashed rgba(255,255,255,0.25);
+}
+.fc-slot-empty.old .fc-id-tag {
+  background: var(--ob-bone);
+  color: var(--ob-ink);
+  border: 1px solid var(--ob-ink);
+  font-family: var(--f-mono-old);
+  font-size: 11px;
+}
+
+/* When the image-slot has filled (a real portrait dropped), hide the
+   silhouette + id tag placeholder so the photo gets the full canvas. */
+.fc-portrait image-slot[data-filled] ~ .fc-slot-empty { display: none; }
+
+/* Landing marquee slots — same pattern, hide silhouette behind real portrait */
+.ob-portrait image-slot[data-filled] ~ .silhouette,
+.nb-portrait image-slot[data-filled] ~ .silhouette { display: none; }
+
+/* Tilt wrapper */
+.tilt {
+  transform: perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+  transition: transform 120ms ease-out;
+  transform-style: preserve-3d;
+}
+.tilt-inner {
+  transform: translateZ(20px);
+}
+
+/* Brand mark */
+.brand-mark {
+  display: inline-flex;
+  align-items: stretch;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.brand-mark > span { white-space: nowrap; }
+.brand-mark .bm-old {
+  font-family: var(--f-disp-old);
+  background: var(--ob-bone);
+  color: var(--ob-ink);
+  padding: 0.1em 0.45em 0.05em;
+  text-shadow: 1px 0 0 var(--ob-blood), -1px 0 0 var(--ob-cyan);
+  position: relative;
+  border: 1px solid var(--ob-ink);
+}
+.brand-mark .bm-slash {
+  font-family: var(--f-disp-new);
+  background: var(--ob-gold);
+  color: var(--ob-ink);
+  padding: 0.1em 0.25em 0.05em;
+  display: flex; align-items: center;
+  border-top: 1px solid var(--ob-ink);
+  border-bottom: 1px solid var(--ob-ink);
+}
+.brand-mark .bm-new {
+  font-family: var(--f-disp-new);
+  background: var(--nb-ink);
+  color: var(--nb-lightning);
+  padding: 0.1em 0.45em 0.05em;
+  border: 1px solid var(--nb-line);
+  border-left: 0;
+  font-stretch: condensed;
+}
+
+/* Buttons */
+.btn-old {
+  font-family: var(--f-disp-old);
+  text-transform: uppercase;
+  background: var(--ob-bone);
+  color: var(--ob-ink);
+  border: 2px solid var(--ob-ink);
+  box-shadow: 4px 4px 0 var(--ob-magenta), 4px 4px 0 2px var(--ob-ink);
+  padding: 14px 22px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  position: relative;
+  transition: transform .08s, box-shadow .08s;
+}
+.btn-old:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ob-magenta), 6px 6px 0 2px var(--ob-ink); }
+.btn-old:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--ob-magenta), 2px 2px 0 2px var(--ob-ink); }
+
+.btn-new {
+  font-family: var(--f-disp-new);
+  text-transform: uppercase;
+  background: var(--nb-bone);
+  color: var(--nb-ink);
+  border: 0;
+  padding: 14px 22px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  position: relative;
+  font-weight: 700;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+.btn-new.btn-new-red { background: var(--nb-red); color: var(--nb-bone); }
+.btn-new:hover { background: oklch(0.86 0.005 270); }
+.btn-new.btn-new-red:hover { background: var(--nb-red-2); }
+
+/* ─────────────────────────────────────────────────────────────
+   Button shape variants — switched via [data-btn-shape] on <html>
+   Reads inspiration from arena-HUD / forged-banner UI vocabularies:
+   stamped tabs with angled corners, not pills or rounded rects.
+   ───────────────────────────────────────────────────────────── */
+
+/* default: chamfered corners (existing) — applied unless overridden */
+[data-btn-shape="chamfer"] .btn-new {
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+
+/* banner-tab: tapered hex points on both short sides — forged plaque */
+[data-btn-shape="banner"] .btn-new {
+  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%);
+  padding-left: 30px;
+  padding-right: 30px;
+}
+
+/* slab: pure rectangle with a hard inner stroke — brutalist HUD */
+[data-btn-shape="slab"] .btn-new {
+  clip-path: none;
+  outline: 1px solid currentColor;
+  outline-offset: -4px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
+}
+[data-btn-shape="slab"] .btn-new.btn-new-red {
+  outline-color: oklch(0.78 0.15 27);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.22),
+    0 0 22px oklch(0.55 0.24 27 / 0.35);
+}
+
+/* skew: parallelogram — kinetic, motion-blurred */
+[data-btn-shape="skew"] .btn-new {
+  clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+}
+
+/* hover/active tweaks specific to slab (no clip-path means corners visible) */
+[data-btn-shape="slab"] .btn-new:hover { transform: translateY(-1px); }
+[data-btn-shape="slab"] .btn-new:active { transform: translateY(0); }
+
+/* ─────────────────────────────────────────────────────────────
+   Fighter card shape variants — switched via [data-card-shape]
+   ───────────────────────────────────────────────────────────── */
+
+/* default: chamfer (existing — controlled by --card-r-* tokens). */
+
+/* tomb: tight arched top, flat bottom, thin inner frame.
+   Inspired by stamped combat-roster plates — angular and architectural,
+   not softly rounded. Tight radius keeps the forged feel at small sizes. */
+[data-card-shape="tomb"] .fighter-card {
+  border-radius: 14px 14px 3px 3px !important;
+  position: relative;
+}
+[data-card-shape="tomb"] .fighter-card::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 11px 11px 1px 1px;
+  pointer-events: none;
+  z-index: 10;
+  mix-blend-mode: overlay;
+}
+/* invert the inner stroke for the cream/old card */
+[data-card-shape="tomb"] .fighter-card[style*="--ob-bone"]::before,
+[data-card-shape="tomb"] .fighter-card:has(.fc-band-top[style*="ob-bone"])::before {
+  border-color: rgba(0,0,0,0.22);
+  mix-blend-mode: multiply;
+}
+/* arched top band needs matching top radius so it doesn't poke past the curve */
+[data-card-shape="tomb"] .fighter-card .fc-band-top {
+  border-radius: 12px 12px 0 0;
+}
+
+/* slab: pure rectangle, zero radius — brutalist */
+[data-card-shape="slab"] .fighter-card {
+  border-radius: 0 !important;
+}
+
+/* Disclaimer ribbon */
+.disclaimer {
+  font-family: var(--f-mono-new);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  text-align: center;
+  padding: 8px 12px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(8px);
+}
+
+/* Hide scrollbars in artboards */
+.artboard-screen { width: 100%; height: 100%; overflow: hidden; }
+
+/* Animations */
+@keyframes barfill { from { width: 0; } }
+@keyframes glitch-x {
+  0%, 95%, 100% { transform: translateX(0); }
+  96% { transform: translateX(-2px); }
+  98% { transform: translateX(3px); }
+}
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.58 0.24 27 / 0.6); }
+  50% { box-shadow: 0 0 0 14px oklch(0.58 0.24 27 / 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .era-old::after, [data-era="old"]::after { animation: none; }
+  .tilt { transition: none; transform: none !important; }
+}

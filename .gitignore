@@ -1,0 +1,8 @@
+.DS_Store
+node_modules/
+.next/
+.env.local
+.env*.local
+.vercel
+*.log
+.claude/worktrees/
