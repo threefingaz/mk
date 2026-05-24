@@ -147,13 +147,16 @@ function PageBody() {
       <MuteToggle
         muted={muted}
         onToggle={() => {
-          // The toggle click itself counts as a user gesture, so it's a
-          // valid moment to boot the AudioContext. Without this, a user who
-          // unmutes from Landing (before clicking FIGHT) would have an
-          // unmuted store but a locked context — silence until they gesture
-          // somewhere else. unlockAudio is idempotent.
-          void unlockAudio();
-          setMuted(!muted);
+          const nextMuted = !muted;
+          // Push the new muted state into the audio module synchronously so
+          // the useEffect bridge doesn't race with unlockAudio()'s
+          // tryStartBgLoop() — otherwise clicking to mute can briefly start
+          // the bg loop with a cached sample.
+          setAudioMuted(nextMuted);
+          setMuted(nextMuted);
+          // The toggle click is a valid user gesture for the AudioContext,
+          // but only worth unlocking on the unmute direction.
+          if (!nextMuted) void unlockAudio();
         }}
       />
       <DisclaimerRibbon />

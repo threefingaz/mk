@@ -156,16 +156,27 @@ async function loadSample(key: SampleKey): Promise<AudioBuffer | null> {
 /**
  * Called on first user gesture. Idempotent + coalesces concurrent calls into
  * a single in-flight promise so the AudioContext is only constructed once.
+ *
+ * Failure recovery: if ensureContext() can't produce a running context
+ * (constructor throws, resume() rejects, or iOS Safari leaves state as
+ * 'suspended' despite resume), `unlocked` stays false AND `unlockPromise` is
+ * cleared so the *next* user gesture gets a fresh attempt. Without this the
+ * module latches into a permanently-unlocked-but-silent state.
  */
 export async function unlockAudio(): Promise<void> {
   if (unlocked) return;
   if (unlockPromise) return unlockPromise;
 
   unlockPromise = (async () => {
-    await ensureContext();
-    unlocked = true;
-    // First chance to start the bg loop if intent was registered before unlock.
-    tryStartBgLoop();
+    try {
+      await ensureContext();
+      if (ctx && ctx.state === 'running') {
+        unlocked = true;
+        tryStartBgLoop();
+      }
+    } finally {
+      unlockPromise = null;
+    }
   })();
   return unlockPromise;
 }
@@ -210,11 +221,24 @@ function playBuffer(buf: AudioBuffer | null, loop = false): AudioBufferSourceNod
 }
 
 /**
+ * SSR-safe `prefers-reduced-motion: reduce` check. Mirrors the pattern in
+ * `hooks/useTilt.ts` — CLAUDE.md lists this file as a load-bearing
+ * suppression point for reduced-motion users.
+ */
+function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/**
  * Common guard for the one-shot play functions. Returns true when the caller
- * should proceed to actually schedule sound.
+ * should proceed to actually schedule sound. Gates on reduced-motion AND
+ * `ctx.state === 'running'` so a suspended-after-unlock context (iOS Safari
+ * edge case) doesn't get sources scheduled into it.
  */
 function canPlay(): boolean {
-  return unlocked && !muted && ctx !== null;
+  if (prefersReducedMotion()) return false;
+  return unlocked && !muted && ctx !== null && ctx.state === 'running';
 }
 
 async function playSlot(key: SampleKey): Promise<void> {

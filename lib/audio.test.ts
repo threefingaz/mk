@@ -353,5 +353,86 @@ describe('audio module', () => {
       expect(fetchSpy).not.toHaveBeenCalled();
       expect(createdSources).toHaveLength(0);
     });
+
+    it('does not latch unlocked when resume() keeps failing — next gesture retries', async () => {
+      // Replace the global stub with one whose resume() rejects, leaving the
+      // context in 'suspended'. This simulates the iOS Safari autoplay edge
+      // case the unlock-state hardening is meant to recover from.
+      restoreAudioContext();
+      let resumeAttempts = 0;
+      class StuckSuspendedContext {
+        state: 'suspended' | 'running' = 'suspended';
+        destination = {};
+        constructor() {
+          ctxConstructorCount += 1;
+        }
+        resume = vi.fn().mockImplementation(async () => {
+          resumeAttempts += 1;
+          throw new Error('resume failed');
+        });
+        decodeAudioData = vi.fn().mockImplementation(async () => ({}) as unknown as AudioBuffer);
+        createBufferSource = vi.fn().mockImplementation(() => new StubAudioBufferSourceNode());
+      }
+      (globalThis as unknown as { AudioContext: unknown }).AudioContext =
+        StuckSuspendedContext as unknown as typeof AudioContext;
+      restoreAudioContext = () => {
+        (globalThis as unknown as { AudioContext?: unknown }).AudioContext = undefined;
+      };
+
+      await unlockAudio();
+      // canPlay should reject — no source should be schedulable.
+      setMuted(false);
+      playOldImpact();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(createdSources).toHaveLength(0);
+
+      // Second gesture retries resume — confirms unlock didn't latch.
+      await unlockAudio();
+      expect(resumeAttempts).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('prefers-reduced-motion suppression', () => {
+    let originalMatchMedia: typeof window.matchMedia | undefined;
+
+    beforeEach(() => {
+      originalMatchMedia = window.matchMedia;
+      window.matchMedia = ((query: string) =>
+        ({
+          matches: query.includes('prefers-reduced-motion'),
+          media: query,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+        }) as unknown as MediaQueryList) as typeof window.matchMedia;
+    });
+
+    afterEach(() => {
+      if (originalMatchMedia) window.matchMedia = originalMatchMedia;
+      else delete (window as unknown as { matchMedia?: unknown }).matchMedia;
+    });
+
+    it('suppresses one-shot playback even when unlocked + unmuted', async () => {
+      await unlockAudio();
+      setMuted(false);
+
+      playOldImpact();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(createdSources).toHaveLength(0);
+    });
+
+    it('suppresses the bg loop even with standing intent', async () => {
+      await unlockAudio();
+      setMuted(false);
+      setBgLoop(true);
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(createdSources).toHaveLength(0);
+    });
   });
 });
