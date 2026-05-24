@@ -44,6 +44,12 @@ let oldImpactIdx = 0;
 let newImpactIdx = 0;
 
 let bgLoopNode: AudioBufferSourceNode | null = null;
+// Intent flag: bg loop is ambient (not gesture-driven), so callers declare
+// intent up-front and the module starts/restarts the loop whenever the gating
+// conditions (unlocked + !muted) become true. Without this, calling
+// setBgLoop(true) before the first user gesture silently no-ops and the
+// intent is lost — which is how the loop was failing to play in v1.
+let wantsBgLoop = false;
 
 let unlocked = false;
 let unlockPromise: Promise<void> | null = null;
@@ -101,20 +107,34 @@ async function ensureContext(): Promise<void> {
 // need a warning channel to discover the manifest.
 // ---------------------------------------------------------------------------
 
+async function tryLoad(path: string): Promise<AudioBuffer | null> {
+  if (!ctx) return null;
+  const res = await fetch(path);
+  if (!res.ok) throw new Error('fetch !ok: ' + res.status);
+  const ab = await res.arrayBuffer();
+  return ctx.decodeAudioData(ab);
+}
+
 async function loadSample(key: SampleKey): Promise<AudioBuffer | null> {
   if (samples.has(key)) return samples.get(key) ?? null;
   const existing = inflightLoads.get(key);
   if (existing) return existing;
 
-  const path = SAMPLE_PATHS[key];
+  const webmPath = SAMPLE_PATHS[key];
+  const mp3Path = webmPath.replace(/\.webm$/, '.mp3');
 
   const load = (async (): Promise<AudioBuffer | null> => {
     try {
       if (!ctx) return null;
-      const res = await fetch(path);
-      if (!res.ok) throw new Error('fetch !ok: ' + res.status);
-      const ab = await res.arrayBuffer();
-      const buf = await ctx.decodeAudioData(ab);
+      let buf: AudioBuffer | null = null;
+      try {
+        buf = await tryLoad(webmPath);
+      } catch {
+        // webm missing or undecodable (Safari <14 has no Opus decode) — fall
+        // back to the mp3 sibling. If that also fails the outer catch caches
+        // null and stays silent per Q6.
+        buf = await tryLoad(mp3Path);
+      }
       samples.set(key, buf);
       return buf;
     } catch {
@@ -144,6 +164,8 @@ export async function unlockAudio(): Promise<void> {
   unlockPromise = (async () => {
     await ensureContext();
     unlocked = true;
+    // First chance to start the bg loop if intent was registered before unlock.
+    tryStartBgLoop();
   })();
   return unlockPromise;
 }
@@ -151,7 +173,7 @@ export async function unlockAudio(): Promise<void> {
 /** Update the muted flag. Wired from app/page.tsx watching the identity store. */
 export function setMuted(next: boolean): void {
   muted = next;
-  // Hard-stop bg loop the moment we mute. Resuming it is the caller's job.
+  // Hard-stop bg loop the moment we mute.
   if (muted && bgLoopNode) {
     try {
       bgLoopNode.stop();
@@ -165,6 +187,8 @@ export function setMuted(next: boolean): void {
     }
     bgLoopNode = null;
   }
+  // On unmute, re-honor any standing bg-loop intent.
+  if (!muted) tryStartBgLoop();
 }
 
 // ---------------------------------------------------------------------------
@@ -229,10 +253,14 @@ export function playVerdictSting(): void {
 }
 
 /**
- * Start or stop the background loop. Idempotent — calling setBgLoop(true)
- * while a loop is already playing is a no-op.
+ * Declare bg-loop intent. on=true means "play the loop whenever conditions
+ * allow"; the module will start it now if unlocked+unmuted, and retry on the
+ * next unlock/unmute transition otherwise. on=false stops the loop and clears
+ * the intent. Idempotent — calling setBgLoop(true) while already playing is
+ * a no-op.
  */
 export function setBgLoop(on: boolean): void {
+  wantsBgLoop = on;
   if (!on) {
     if (bgLoopNode) {
       try {
@@ -249,12 +277,15 @@ export function setBgLoop(on: boolean): void {
     }
     return;
   }
+  tryStartBgLoop();
+}
 
+function tryStartBgLoop(): void {
+  if (!wantsBgLoop) return;
   if (!canPlay() || bgLoopNode) return;
-
   void (async () => {
     const buf = await loadSample('bg/loop');
-    if (!canPlay() || bgLoopNode) return;
+    if (!wantsBgLoop || !canPlay() || bgLoopNode) return;
     const node = playBuffer(buf, true);
     if (node) {
       bgLoopNode = node;
@@ -280,6 +311,7 @@ export function __resetAudioForTest(): void {
     }
     bgLoopNode = null;
   }
+  wantsBgLoop = false;
   unlocked = false;
   unlockPromise = null;
   muted = true;

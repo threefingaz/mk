@@ -179,6 +179,30 @@ describe('audio module', () => {
       expect(createdSources).toHaveLength(0);
     });
 
+    it('webm 404 falls back to mp3 sibling', async () => {
+      fetchSpy.mockReset();
+      fetchSpy.mockImplementation(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith('.webm')) {
+          return { ok: false, status: 404, arrayBuffer: async () => new ArrayBuffer(0) } as unknown as Response;
+        }
+        return okResponse();
+      });
+
+      await unlockAudio();
+      setMuted(false);
+
+      playOldImpact();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const fetchedPaths = fetchSpy.mock.calls.map((c) => String(c[0]));
+      expect(fetchedPaths).toContain('/audio/impacts/old-1.webm');
+      expect(fetchedPaths).toContain('/audio/impacts/old-1.mp3');
+      // The mp3 succeeded, so a source node should have been created.
+      expect(createdSources).toHaveLength(1);
+    });
+
     it('404 response is treated as missing (silent — no warn, no source)', async () => {
       fetchSpy.mockReset();
       fetchSpy.mockImplementation(
@@ -249,6 +273,42 @@ describe('audio module', () => {
 
       setBgLoop(false);
       expect(bgSource.stop).toHaveBeenCalled();
+    });
+
+    it('setBgLoop(true) before unlock defers start until unlockAudio resolves', async () => {
+      setMuted(false);
+      setBgLoop(true);
+      // No unlock yet — nothing should have fetched or sourced.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(createdSources).toHaveLength(0);
+
+      await unlockAudio();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(createdSources.length).toBeGreaterThanOrEqual(1);
+      expect(createdSources[createdSources.length - 1].start).toHaveBeenCalled();
+    });
+
+    it('setBgLoop(true) then mute→unmute restarts the loop without re-calling setBgLoop', async () => {
+      await unlockAudio();
+      setMuted(false);
+      setBgLoop(true);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const firstCount = createdSources.length;
+      expect(firstCount).toBeGreaterThanOrEqual(1);
+
+      setMuted(true);
+      // Mute should have stopped the loop.
+      expect(createdSources[firstCount - 1].stop).toHaveBeenCalled();
+
+      setMuted(false);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      // Unmute should auto-restart from standing intent.
+      expect(createdSources.length).toBeGreaterThan(firstCount);
     });
 
     it('setBgLoop(true) while already playing is a no-op (does not create a second source)', async () => {

@@ -3,6 +3,10 @@
 This directory holds the audio sample bank. All files are optional —
 missing files are silently absent (no console errors, no UI failures).
 
+`lib/audio.ts` fetches `.webm` first and falls back to the `.mp3` sibling
+on fetch or decode failure (Safari <14 lacks Opus decode). Ship both
+formats per slot for full coverage; ship only `.webm` to drop Safari <14.
+
 Expected slots:
 - impacts/old-1.webm + impacts/old-1.mp3
 - impacts/old-2.webm + impacts/old-2.mp3
@@ -13,6 +17,6 @@ Expected slots:
 - voice/old.webm + voice/old.mp3
 - voice/new.webm + voice/new.mp3
 - sting/verdict.webm + sting/verdict.mp3
-- bg/loop.webm (opus-only acceptable; Safari <14 misses bg loop)
+- bg/loop.webm + bg/loop.mp3
 
 See plan Q6 / Task 18 for format and licensing requirements.

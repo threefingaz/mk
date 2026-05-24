@@ -41,7 +41,7 @@ import { UnlockMoment } from '@/components/screens/UnlockMoment';
 import { ReturningVisitor } from '@/components/screens/ReturningVisitor';
 import { fetchResults } from '@/lib/api-client';
 import { useIdentityStore, useRunStore } from '@/lib/store';
-import { setMuted as setAudioMuted } from '@/lib/audio';
+import { setBgLoop, setMuted as setAudioMuted, unlockAudio } from '@/lib/audio';
 import { useHydrated } from '@/hooks/useHydrated';
 
 // Full-viewport canvas wrapper. v1 is mobile-first but the desktop layout
@@ -111,6 +111,13 @@ function PageBody() {
     setAudioMuted(muted);
   }, [muted]);
 
+  // Declare bg-loop intent once on mount. The audio module starts the loop
+  // when both conditions become true (unlocked + !muted) and stops it on mute,
+  // so this is a fire-and-forget statement of intent.
+  useEffect(() => {
+    setBgLoop(true);
+  }, []);
+
   // ── Render selection ─────────────────────────────────────────────────────
 
   let screen: React.ReactNode;
@@ -137,7 +144,18 @@ function PageBody() {
     <main style={PAGE_FRAME_STYLE}>
       {screen}
       {/* Persistent overlays — render regardless of phase. */}
-      <MuteToggle muted={muted} onToggle={() => setMuted(!muted)} />
+      <MuteToggle
+        muted={muted}
+        onToggle={() => {
+          // The toggle click itself counts as a user gesture, so it's a
+          // valid moment to boot the AudioContext. Without this, a user who
+          // unmutes from Landing (before clicking FIGHT) would have an
+          // unmuted store but a locked context — silence until they gesture
+          // somewhere else. unlockAudio is idempotent.
+          void unlockAudio();
+          setMuted(!muted);
+        }}
+      />
       <DisclaimerRibbon />
     </main>
   );
