@@ -1,9 +1,14 @@
 // VsSeam — the "VS" plate between the two era columns on the duel screen.
-// Ported from design_handoff_old_blood_new_blood/design-reference/src/system.jsx (VsSeam).
 //
-// `vertical` (default true) stacks the VS label above the flanking gradient
-// line; `vertical={false}` lays them side-by-side. The label uses the New
-// Blood condensed display face at 28px in --nb-red, with an 18px red glow.
+// `vertical=true` (default, mobile) sits between vertically stacked cards;
+// the seam line runs HORIZONTALLY through the VS label.
+// `vertical=false` (desktop) sits between side-by-side cards; the seam line
+// runs VERTICALLY through the VS label.
+//
+// The line is rendered as TWO gradient segments flanking the label so the
+// line visually passes THROUGH the VS instead of sitting as a 60px stub
+// next to it. Each segment fades from transparent at the outer edge to red
+// at the label, producing a continuous "/" between the two era columns.
 
 import type { CSSProperties } from 'react';
 
@@ -16,42 +21,60 @@ export type VsSeamProps = {
 };
 
 export function VsSeam({ vertical = true, testId = 'vs-seam' }: VsSeamProps) {
+  // `vertical=true` (mobile) → seam BETWEEN stacked cards → line is
+  // horizontal → flex-direction: row so the two line segments flank VS
+  // along the x-axis. The reverse holds for desktop.
+  const horizontalLine = vertical;
+
   const wrap: CSSProperties = {
     display: 'flex',
-    flexDirection: vertical ? 'column' : 'row',
+    flexDirection: horizontalLine ? 'row' : 'column',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    padding: vertical ? '12px 0' : '0 12px',
+    padding: horizontalLine ? '12px 0' : '0 12px',
+    width: '100%',
+    height: '100%',
   };
 
   const label: CSSProperties = {
+    flex: '0 0 auto',
     fontSize: 28,
     lineHeight: 1,
     color: 'var(--nb-red)',
     textShadow: '0 0 18px var(--nb-red)',
   };
 
-  // NOTE: when `vertical={false}` (desktop horizontal layout), the line
-  // element uses `flex: 1 1 auto` — callers MUST place this seam in a
-  // content-sized parent (not a parent that grants arbitrary extra space)
-  // or the line will stretch unexpectedly. Duel wraps each seam in
-  // `.duel-seam-h` / `.duel-seam-v` which are content-sized.
-  const line: CSSProperties = {
-    flex: vertical ? '0 0 auto' : '1 1 auto',
-    width: vertical ? 60 : 1,
-    height: vertical ? 1 : 60,
-    background: vertical
-      ? 'linear-gradient(to right, transparent, var(--nb-red), transparent)'
-      : 'linear-gradient(to bottom, transparent, var(--nb-red), transparent)',
+  // Both segments stretch to fill the perpendicular axis. The outer edge of
+  // each fades to transparent so the seam blends into the cards above/below
+  // (or left/right of) the label.
+  const segmentBase: CSSProperties = {
+    flex: '1 1 auto',
+    width: horizontalLine ? 'auto' : 1,
+    height: horizontalLine ? 1 : 'auto',
+  };
+
+  const leadSegment: CSSProperties = {
+    ...segmentBase,
+    background: horizontalLine
+      ? 'linear-gradient(to right, transparent, var(--nb-red))'
+      : 'linear-gradient(to bottom, transparent, var(--nb-red))',
+  };
+
+  const trailSegment: CSSProperties = {
+    ...segmentBase,
+    background: horizontalLine
+      ? 'linear-gradient(to right, var(--nb-red), transparent)'
+      : 'linear-gradient(to bottom, var(--nb-red), transparent)',
   };
 
   return (
     <div style={wrap} data-testid={testId}>
+      <div style={leadSegment} aria-hidden />
       <div className="nb-display nb-condensed" style={label}>
         VS
       </div>
-      <div style={line} />
+      <div style={trailSegment} aria-hidden />
     </div>
   );
 }
