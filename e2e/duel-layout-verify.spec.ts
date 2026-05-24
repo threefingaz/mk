@@ -99,20 +99,30 @@ test('Re-pick swaps the locked stamp without re-voting (server vote bound to fir
   await expect.poll(() => voteCallCount).toBe(1);
 
   // 2. Swap to new → NEXT stays visible, vote NOT re-fired, picked-stamp
-  //    moves from old card to new card.
+  //    moves from old card to new card. Actively wait for any /api/vote
+  //    request and assert none fires within the settle window — a bare
+  //    `expect.poll(...).toBe(1)` would pass immediately on the
+  //    already-true count without proving "no delayed second POST".
   await newCard.click();
   await expect(page.getByTestId('duel-next')).toBeVisible();
   await expect(newCard).toHaveAttribute('aria-pressed', 'true');
   await expect(oldCard).not.toHaveAttribute('aria-pressed', 'true');
-  // Give the swap path a microtask window in case the JSX guard short-
-  // circuited and never fired a vote; poll to confirm count stays at 1.
-  await expect.poll(() => voteCallCount, { timeout: 500 }).toBe(1);
+  const swapStrayVote = await page
+    .waitForRequest('**/api/vote', { timeout: 500 })
+    .catch(() => null);
+  expect(swapStrayVote).toBeNull();
+  expect(voteCallCount).toBe(1);
 
   // 3. Same-era retap on new → store + JSX both no-op; vote still not
-  //    re-fired, picked-stamp stays on the new card.
+  //    re-fired, picked-stamp stays on the new card. Same deterministic
+  //    "no stray request" pattern as above.
   await newCard.click();
   await expect(newCard).toHaveAttribute('aria-pressed', 'true');
-  await expect.poll(() => voteCallCount, { timeout: 500 }).toBe(1);
+  const retapStrayVote = await page
+    .waitForRequest('**/api/vote', { timeout: 500 })
+    .catch(() => null);
+  expect(retapStrayVote).toBeNull();
+  expect(voteCallCount).toBe(1);
 
   // The cross-step reset case is exercised by the unit test
   // (`lib/store.test.ts::after next(), the next step's first pick is treated

@@ -1,5 +1,7 @@
 # Duel mobile side-by-side + tap-to-swap re-pick
 
+> **POST-COMPLETION CORRECTION (2026-05-24):** The "Technical Details > Layout" section below proposes adding inline `gap` / `display` / `flexDirection` to the `.duel-cards` wrapper and relying on the desktop CSS to override the inline gap. Implementation review proved this wrong — inline shorthand wins on specificity over the desktop CSS rule, so the inline gap leaked into the desktop layout. The shipped fix (commit `02b7733`) removed those inline values and moved all layout properties to CSS; the wrapper now sets only `flex: 1` and `minHeight: 0` inline. This document is preserved as historical record — read `app/globals.css` `.duel-cards` rules and `components/screens/Duel.tsx` for the actual final shape.
+
 ## Overview
 
 Restore the original mobile Duel layout (two cards side-by-side, separated only by the era-split background) and give the second tap on the duel screen real meaning by allowing the user to swap their pick before tapping NEXT.

@@ -1,9 +1,17 @@
 // VsSeam — the "VS" plate between the two era columns on the duel screen.
 //
-// `vertical=true` (default, mobile) sits between vertically stacked cards;
-// the seam line runs HORIZONTALLY through the VS label.
-// `vertical=false` (desktop) sits between side-by-side cards; the seam line
-// runs VERTICALLY through the VS label.
+// Only `vertical=false` (desktop, horizontal line variant) is visually used
+// today: the >=900px layout renders it inside `.duel-seam-v` between the
+// side-by-side cards, with the seam line running VERTICALLY through the
+// VS label.
+//
+// The `vertical=true` JSX path (horizontal line variant, default) still
+// renders into `.duel-seam-h` but that container is `display: none` at
+// every viewport — the era-split background now divides the two halves on
+// mobile, so the seam is no longer needed. The element is kept in the tree
+// as a stable `testId` scaffold per CLAUDE.md's Duel-specific helpers
+// section (renaming `.duel-seam-h` / `vs-seam-h` silently breaks the
+// desktop layout flip contract).
 //
 // The line is rendered as TWO gradient segments flanking the label so the
 // line visually passes THROUGH the VS instead of sitting as a 60px stub
