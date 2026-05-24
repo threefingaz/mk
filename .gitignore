@@ -6,3 +6,10 @@ node_modules/
 .vercel
 *.log
 .claude/worktrees/
+*.tsbuildinfo
+next-env.d.ts
+/coverage
+/out
+/playwright-report
+/test-results
+/.playwright
