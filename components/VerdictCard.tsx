@@ -23,10 +23,11 @@
 // useTilt is applied to the outer card div for desktop hover; reduced-motion is
 // respected internally by the hook.
 
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { useTilt } from '@/hooks/useTilt';
 import { Silhouette } from '@/components/Silhouette';
 import { FIGHTERS, getFighter, type Era, type FighterId } from '@/lib/fighters';
+import { portraitFor } from '@/lib/portraits';
 import type { PickRow, RunResult } from '@/lib/run-result';
 
 // Each of the 9 mini-cells in the pick grid. The cell's era theme follows the
@@ -36,6 +37,10 @@ function PickCell({ row }: { row: PickRow }) {
   const fighter = getFighter(row.fighter);
   const era = row.choice;
   const isContrarian = row.majority !== null && row.choice !== row.majority;
+  // Inline img+onError fallback (not <Portrait>) because PickCell is sized by
+  // the parent's `repeat(3, 1fr)` grid tracks, not 4:5 aspectRatio — Portrait's
+  // wrapper hard-codes aspectRatio and would mis-size in this layout.
+  const [errored, setErrored] = useState(false);
 
   const ringStyle: CSSProperties = isContrarian
     ? { boxShadow: '0 0 0 2px var(--nb-red)' }
@@ -48,45 +53,30 @@ function PickCell({ row }: { row: PickRow }) {
       className={`era-${era}`}
       style={{
         position: 'relative',
-        aspectRatio: '4 / 5',
         overflow: 'hidden',
         background: '#000',
         ...ringStyle,
       }}
     >
-      {/* Silhouette fills the cell — production portraits drop in later via
-          <Portrait>, but VerdictCard ships with silhouettes so the grid stays
-          dense and legible at this size even without art assets. */}
       <div style={{ position: 'absolute', inset: 0 }}>
-        <Silhouette kind={fighter.silhouette} era={era} />
-      </div>
-
-      {/* Bottom actor-name band. Era-specific font + treatment. */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          padding: '3px 4px',
-          background: 'rgba(0,0,0,0.6)',
-          borderTop: '1px solid rgba(255,255,255,0.12)',
-        }}
-      >
-        <div
-          className={era === 'old' ? 'ob-mono' : 'nb-mono'}
-          style={{
-            fontSize: 7,
-            letterSpacing: '0.05em',
-            color: era === 'old' ? 'var(--ob-bone)' : 'var(--nb-bone)',
-            textAlign: 'center',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {era === 'old' ? fighter.oldActor : fighter.newActor}
-        </div>
+        {errored ? (
+          <Silhouette kind={fighter.silhouette} era={era} />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element -- onError fallback to <Silhouette> requires a plain <img>; next/image doesn't expose a comparable error hook.
+          <img
+            src={portraitFor(row.fighter, era)}
+            alt={`${era === 'old' ? fighter.oldActor : fighter.newActor} as ${fighter.name}`}
+            onError={() => setErrored(true)}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block',
+            }}
+          />
+        )}
       </div>
     </div>
   );
@@ -148,10 +138,10 @@ export function VerdictCard({ result }: { result: RunResult }) {
           position: 'relative',
           zIndex: 4,
           height: '100%',
-          padding: '6% 6% 7%',
+          padding: '5% 5% 12%',
           display: 'flex',
           flexDirection: 'column',
-          gap: '4%',
+          gap: '3%',
         }}
       >
         {/* Top — archetype band. Display lockup over the dominant-era field. */}
@@ -183,27 +173,6 @@ export function VerdictCard({ result }: { result: RunResult }) {
           >
             {arch.name}
           </div>
-        </div>
-
-        {/* Middle — 3×3 pick grid. */}
-        <div
-          data-testid="verdict-pick-grid"
-          style={{
-            flex: 1,
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gridTemplateRows: 'repeat(3, 1fr)',
-            gap: 6,
-            minHeight: 0,
-          }}
-        >
-          {orderedRows.map((row) => (
-            <PickCell key={row.fighter} row={row} />
-          ))}
-        </div>
-
-        {/* Bottom — stats lockup + optional kicker. */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div
             data-testid="verdict-stats"
             className="nb-mono"
@@ -215,6 +184,7 @@ export function VerdictCard({ result }: { result: RunResult }) {
               background: 'rgba(0,0,0,0.55)',
               border: '1px solid rgba(255,255,255,0.18)',
               padding: '8px 10px',
+              marginTop: 10,
             }}
           >
             {result.oldPicks}/9 OLD · {result.newPicks}/9 NEW
@@ -225,24 +195,42 @@ export function VerdictCard({ result }: { result: RunResult }) {
               </>
             )}
           </div>
-
-          {kicker !== null && (
-            <div
-              data-testid="verdict-kicker"
-              className="nb-display nb-condensed"
-              style={{
-                fontSize: 13,
-                lineHeight: 1.05,
-                letterSpacing: '0.05em',
-                color: 'var(--nb-red)',
-                textAlign: 'center',
-                textShadow: '0 0 12px oklch(0.55 0.24 27 / 0.5)',
-              }}
-            >
-              {kicker}
-            </div>
-          )}
         </div>
+
+        {/* Middle — 3×3 pick grid. */}
+        <div
+          data-testid="verdict-pick-grid"
+          style={{
+            flex: 1,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gridTemplateRows: 'repeat(3, 1fr)',
+            gap: 10,
+            minHeight: 0,
+          }}
+        >
+          {orderedRows.map((row) => (
+            <PickCell key={row.fighter} row={row} />
+          ))}
+        </div>
+
+        {/* Bottom — optional kicker (unlocked mode only). */}
+        {kicker !== null && (
+          <div
+            data-testid="verdict-kicker"
+            className="nb-display nb-condensed"
+            style={{
+              fontSize: 13,
+              lineHeight: 1.05,
+              letterSpacing: '0.05em',
+              color: 'var(--nb-red)',
+              textAlign: 'center',
+              textShadow: '0 0 12px oklch(0.55 0.24 27 / 0.5)',
+            }}
+          >
+            {kicker}
+          </div>
+        )}
       </div>
     </div>
   );
