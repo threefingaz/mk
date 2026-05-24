@@ -395,11 +395,9 @@ describe('useRunStore.recordPickAndSubmit', () => {
     expect(useRunStore.getState().duelState).toBe('pickedNew');
   });
 
-  it('rapid double-tap is a no-op once a pick is committed (idempotency guard)', () => {
-    // Real-world: user taps OLD, then immediately taps NEW before next() fires.
-    // The second call MUST be a no-op — no second submitVote, no flipped
-    // duelState, no second markVoted entry. The action becomes live again
-    // after next() resets duelState to 'idle' and advances step.
+  it('cross-era retap (old → new) swaps duelState; server vote stays bound to first pick', () => {
+    // The "re-pick before NEXT" affordance. The user taps OLD, then taps NEW
+    // before next(): duelState swaps, but no second markVoted / submitVote.
     useRunStore.getState().start();
     const { order, step, runId } = useRunStore.getState();
     const fighter = FIGHTERS[order[step]];
@@ -410,20 +408,80 @@ describe('useRunStore.recordPickAndSubmit', () => {
     expect(submitVote).toHaveBeenCalledWith(fighter.id, 'old', runId);
     expect(useIdentityStore.getState().votedMatchups[fighter.id]).toBe('old');
 
-    // Second tap: different era, but the step has already been committed.
-    // No state changes, no second network call.
-    vi.mocked(submitVote).mockClear();
     useRunStore.getState().recordPickAndSubmit('new');
-    expect(useRunStore.getState().duelState).toBe('pickedOld'); // unchanged
-    expect(submitVote).not.toHaveBeenCalled();
-    expect(useIdentityStore.getState().votedMatchups[fighter.id]).toBe('old'); // unchanged
 
-    // After next(), duelState resets and the next step becomes pick-able again.
+    expect(useRunStore.getState().duelState).toBe('pickedNew');
+    expect(submitVote).toHaveBeenCalledTimes(1); // still 1 — no resubmit on swap
+    expect(useIdentityStore.getState().votedMatchups[fighter.id]).toBe('old'); // unchanged
+  });
+
+  it('cross-era retap (new → old) — symmetric swap path', () => {
+    useRunStore.getState().start();
+    const { order, step, runId } = useRunStore.getState();
+    const fighter = FIGHTERS[order[step]];
+
+    useRunStore.getState().recordPickAndSubmit('new');
+    expect(useRunStore.getState().duelState).toBe('pickedNew');
+    expect(submitVote).toHaveBeenCalledTimes(1);
+    expect(submitVote).toHaveBeenCalledWith(fighter.id, 'new', runId);
+    expect(useIdentityStore.getState().votedMatchups[fighter.id]).toBe('new');
+
+    useRunStore.getState().recordPickAndSubmit('old');
+
+    expect(useRunStore.getState().duelState).toBe('pickedOld');
+    expect(submitVote).toHaveBeenCalledTimes(1);
+    expect(useIdentityStore.getState().votedMatchups[fighter.id]).toBe('new');
+  });
+
+  it('same-era retap is a true no-op (does not re-invoke pick / submitVote / markVoted)', () => {
+    // Defensive backstop for the JSX same-era guard in Duel.tsx.
+    useRunStore.getState().start();
+    const { order, step } = useRunStore.getState();
+    const fighter = FIGHTERS[order[step]];
+
+    useRunStore.getState().recordPickAndSubmit('old');
+    expect(useRunStore.getState().duelState).toBe('pickedOld');
+    expect(submitVote).toHaveBeenCalledTimes(1);
+    expect(useIdentityStore.getState().votedMatchups[fighter.id]).toBe('old');
+
+    // Spy on pick to assert the no-op short-circuits *at the top* of the
+    // function (before reaching the final useRunStore.getState().pick(era)).
+    const pickSpy = vi.spyOn(useRunStore.getState(), 'pick');
+    useRunStore.getState().recordPickAndSubmit('old');
+
+    expect(useRunStore.getState().duelState).toBe('pickedOld');
+    expect(submitVote).toHaveBeenCalledTimes(1);
+    expect(useIdentityStore.getState().votedMatchups[fighter.id]).toBe('old');
+    expect(pickSpy).not.toHaveBeenCalled();
+
+    pickSpy.mockRestore();
+  });
+
+  it('after next(), the next step\'s first pick is treated as a first-pick (not a swap)', () => {
+    // Cross-step regression guard: next() must reset duelState to 'idle' so
+    // the next step's first call to recordPickAndSubmit records a fresh vote.
+    useRunStore.getState().start();
+    const stepZero = useRunStore.getState();
+    const fighterZero = FIGHTERS[stepZero.order[stepZero.step]];
+
+    useRunStore.getState().recordPickAndSubmit('new');
+    expect(submitVote).toHaveBeenCalledTimes(1);
+    expect(submitVote).toHaveBeenLastCalledWith(fighterZero.id, 'new', stepZero.runId);
+
     useRunStore.getState().next();
     expect(useRunStore.getState().duelState).toBe('idle');
     expect(useRunStore.getState().step).toBe(1);
-    useRunStore.getState().recordPickAndSubmit('new');
-    expect(useRunStore.getState().duelState).toBe('pickedNew');
+
+    const stepOne = useRunStore.getState();
+    const fighterOne = FIGHTERS[stepOne.order[stepOne.step]];
+
+    useRunStore.getState().recordPickAndSubmit('old');
+
+    expect(useRunStore.getState().duelState).toBe('pickedOld');
+    expect(submitVote).toHaveBeenCalledTimes(2);
+    expect(submitVote).toHaveBeenLastCalledWith(fighterOne.id, 'old', stepOne.runId);
+    expect(useIdentityStore.getState().votedMatchups[fighterZero.id]).toBe('new');
+    expect(useIdentityStore.getState().votedMatchups[fighterOne.id]).toBe('old');
   });
 });
 

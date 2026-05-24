@@ -185,23 +185,26 @@ export function Duel() {
           </div>
         </div>
 
-        {/* Two EraCards — stacked on mobile, side-by-side at ≥900px
-            (old-LEFT, new-RIGHT). The .duel-cards class flips
-            flex-direction at the desktop breakpoint via globals.css;
-            two VsSeams (one horizontal for mobile, one vertical for
-            desktop) swap visibility through .duel-seam-h / .duel-seam-v. */}
+        {/* Two EraCards — side-by-side on all viewports (old-LEFT,
+            new-RIGHT). Mobile is a flex row with a 6px gap (era-split
+            background is the only divider); desktop (≥900px) keeps the
+            flex-row shape but adds a clamp gap, slot max-width cap (400px),
+            and reveals the vertical <VsSeam> between the two cards. Matches
+            the original design (design-reference/src/screens.jsx::DuelScreen
+            ~L173). Both <VsSeam> instances stay rendered so testIds resolve;
+            visibility is CSS-controlled via .duel-seam-h / .duel-seam-v. */}
         <div
           className="duel-cards"
           style={{
             flex: 1,
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: 'row',
             alignItems: 'stretch',
-            // `gap` intentionally omitted: mobile relies on the default
-            // (`gap: normal` → 0 in flex), while desktop receives the
-            // `clamp(16px, 3vw, 48px)` gap from the `.duel-cards` rule in
-            // globals.css. Inline `gap: 0` here would beat the desktop rule
-            // on specificity (per CLAUDE.md "clamp-first" override policy).
+            gap: 6,
+            // Mobile baseline: flex-row with 6px gap. Desktop (≥900px)
+            // overrides `gap` to clamp(16,3vw,48px); the `flex-direction: row
+            // !important` in globals.css defends against any inline-style
+            // regression that reintroduces `flexDirection: 'column'` here.
             minHeight: 0,
           }}
         >
@@ -211,19 +214,17 @@ export function Duel() {
               era="old"
               picked={pickedOld}
               dimmed={pickedNew}
-              onPick={
-                picked
-                  ? undefined
-                  : () => {
-                      trackEvent({ name: 'pick', props: { fighter_id: fighter.id, era: 'old', step } });
-                      // Audio: first-gesture unlock + impact + voice are all
-                      // fire-and-forget. Missing samples are silent (Task 18).
-                      void unlockAudio();
-                      playOldImpact();
-                      playOldVoice();
-                      recordPickAndSubmit('old');
-                    }
-              }
+              // Same-era retap short-circuits here for UX (no audio jitter,
+              // no second analytics event); the store also short-circuits as
+              // a correctness backstop. Cross-era taps fall through and swap.
+              onPick={() => {
+                if (pickedOld) return;
+                trackEvent({ name: 'pick', props: { fighter_id: fighter.id, era: 'old', step } });
+                void unlockAudio();
+                playOldImpact();
+                playOldVoice();
+                recordPickAndSubmit('old');
+              }}
               nameBandMode="actor"
               style={{ flex: 1 }}
             />
@@ -242,17 +243,14 @@ export function Duel() {
               era="new"
               picked={pickedNew}
               dimmed={pickedOld}
-              onPick={
-                picked
-                  ? undefined
-                  : () => {
-                      trackEvent({ name: 'pick', props: { fighter_id: fighter.id, era: 'new', step } });
-                      void unlockAudio();
-                      playNewImpact();
-                      playNewVoice();
-                      recordPickAndSubmit('new');
-                    }
-              }
+              onPick={() => {
+                if (pickedNew) return;
+                trackEvent({ name: 'pick', props: { fighter_id: fighter.id, era: 'new', step } });
+                void unlockAudio();
+                playNewImpact();
+                playNewVoice();
+                recordPickAndSubmit('new');
+              }}
               nameBandMode="actor"
               style={{ flex: 1 }}
             />

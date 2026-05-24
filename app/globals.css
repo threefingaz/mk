@@ -583,20 +583,38 @@ body {
    the old/new split, even on wide screens.
    ───────────────────────────────────────────────────────── */
 
-/* Mobile default: hide the desktop-only seam variant. */
-.duel-seam-v { display: none; }
+/* Duel — mobile baseline.
+   Side-by-side cards at all viewports (matches original design,
+   design-reference/src/screens.jsx::DuelScreen ~L173, originally
+   `gridTemplateColumns: 1fr 1fr; gap: 6` — implemented here as flex-row
+   for specificity hygiene; see desktop block below). The era-split
+   background is the only divider on mobile — no central seam. */
+.duel-cards {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  align-items: stretch;
+  min-height: 0;
+}
+.duel-card-slot {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+.duel-seam-h { display: none; }   /* never shown — era-split divides */
+.duel-seam-v { display: none; }   /* desktop only */
 
 @media (min-width: 900px) {
-  /* Duel: cards reflow from stacked column to side-by-side row.
-     `flex-direction` is the only property here that must beat an inline
-     style (`flexDirection: 'column'` on the wrapper), per CLAUDE.md's
-     "clamp-first, !important only for layout flips" policy. The other
-     desktop-only rules below are CSS-only (no competing inline value),
-     so they don't need `!important`. */
+  /* Desktop layout — keeps the flex-row shape but adds gap clamp,
+     centers the stage, and caps slot width + stage height.
+     `flex-direction: row !important` is the single load-bearing
+     !important on .duel-cards: mobile already lays out as row, but the
+     !important defends against any future inline-style regression that
+     reintroduces `flexDirection: 'column'` on the wrapper. Per CLAUDE.md's
+     "clamp-first, !important only for layout flips" policy. */
   .duel-cards {
     flex-direction: row !important;
     gap: clamp(16px, 3vw, 48px);
-    align-items: stretch;
     justify-content: center;
     /* Height cap — prevents NEXT CTA from being pushed below the fold on
        tall desktop viewports. EraCard portraits render at a 4/5 aspect
@@ -604,7 +622,7 @@ body {
        fits inside `70vh` on a 1440x900 frame (630px) with room for the
        action area beneath the cards. `clamp(400px, 70vh, 700px)` keeps
        the stage proportional to the viewport while staying inside the
-       safe band that fits chrome + CTA. The slot's `max-width: 440px`
+       safe band that fits chrome + CTA. The slot's `max-width: 400px`
        (below) is paired with this ceiling — bump one and you must
        recheck the other. Documented in
        docs/plans/completed/20260524-desktop-layout.md task 3. */
@@ -623,11 +641,9 @@ body {
        ceiling. See math in docs/plans/completed/20260524-desktop-layout.md
        task 3. */
     flex: 1 1 400px;
-    min-width: 0;
     max-width: 400px;
   }
-  /* Seam swap — hide horizontal (mobile), reveal vertical (desktop). */
-  .duel-seam-h { display: none; }
+  /* Reveal vertical seam between the two cards at desktop widths. */
   .duel-seam-v { display: flex; }
 }
 

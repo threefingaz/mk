@@ -113,9 +113,19 @@ Layout flip at `@media (min-width: 900px)`. Fluid type/spacing via `clamp()`. Er
 
 `components/screens/Duel.tsx` and `app/globals.css` are coupled by a small set of class names. Renaming any of them silently breaks the desktop layout flip.
 
-- `.duel-cards` — outer wrapper around the two card slots. CSS flips `flex-direction` from `column` to `row` at >=900px. The inline style on the wrapper deliberately OMITS `gap` so the desktop CSS `gap: clamp(...)` rule takes effect (an inline `gap: 0` would override it on specificity).
-- `.duel-card-slot` — wraps each `EraCard`. Mobile: no effect. Desktop: `flex: 1 1 400px; min-width: 0; max-width: 400px` so two slots + gap shrink to fit narrow desktop viewports without overflowing.
-- `.duel-seam-h` / `.duel-seam-v` — the mobile-only horizontal seam and desktop-only vertical seam, respectively. CSS toggles `display` between them at the breakpoint. Duel renders BOTH `<VsSeam>` instances and passes distinct `testId="vs-seam-h"` / `testId="vs-seam-v"` so `getByTestId('vs-seam')` doesn't trip strict mode (the legacy `vs-seam` default is preserved for any caller that renders only one).
+- `.duel-cards` — outer wrapper around the two card slots. **Side-by-side at all viewports** (matches the original design — `design_handoff_old_blood_new_blood/design-reference/src/screens.jsx::DuelScreen` ~L173). Mobile baseline is `display: flex; flex-direction: row; gap: 6px`. Desktop (>=900px) overrides `gap` to `clamp(16px, 3vw, 48px)`, adds `justify-content: center`, and caps `max-height` to `clamp(400px, 70vh, 700px)`. The `flex-direction: row !important` is preserved as a defensive guard against any inline-style regression to `column` — it remains the single load-bearing `!important` on `.duel-cards`. Don't reintroduce a stacked-on-mobile layout: it removes the load-bearing "see both eras at once" comparison the product is built on.
+- `.duel-card-slot` — wraps each `EraCard`. Mobile: `flex: 1; min-width: 0` (50/50 split with `min-width: 0` so each slot can shrink below its content width inside the row). Desktop: adds `flex: 1 1 400px; max-width: 400px` so two slots + gap shrink to fit narrow desktop viewports without overflowing.
+- `.duel-seam-h` / `.duel-seam-v` — both `<VsSeam>` instances stay rendered in JSX so `getByTestId('vs-seam-h')` / `getByTestId('vs-seam-v')` resolve, but `.duel-seam-h` is **always hidden** (the era-split background is the only mobile divider — there is no central seam on mobile). `.duel-seam-v` is hidden on mobile and shown at >=900px between the two cards.
+
+### Duel pick semantics — re-pick before NEXT
+
+Tapping a card sets your pick (`duelState` → `pickedOld`/`pickedNew`) and submits a vote to the server (subject to per-matchup dedupe). Tapping the OTHER card before NEXT swaps your local pick (and what `next()` commits to `picks[step]`) — but does NOT re-submit the server vote. The server vote stays bound to the first pick on each matchup by design: a re-submit would be dropped by the per-matchup dedupe today, and if dedupe is ever relaxed, allowing it would cause double-count drift.
+
+Same-era retap is a true no-op at both layers:
+- **JSX** (`components/screens/Duel.tsx`) — each `onPick` handler short-circuits at the top if the just-tapped card is already the picked one, skipping audio, analytics, and `recordPickAndSubmit`. This prevents audio jitter.
+- **Store** (`lib/store.ts::recordPickAndSubmit`) — re-reads `useRunStore.getState()` fresh inside the function and returns early when the new era matches the current `duelState`. This is the correctness backstop against a bounce-tap race that bypasses the JSX gate.
+
+Don't reintroduce a `picked ? undefined : ...` guard on the EraCard `onPick` prop — that would break the swap affordance and the keyboard accessibility (EraCard gates `tabIndex` on `onPick` being truthy, so a missing handler makes the picked card unfocusable).
 
 ### Reading-column tokens
 
@@ -136,11 +146,13 @@ UnlockMoment's celebratory animations (`reveal-up` headline, `glitch-x` eyebrow,
 | Event | Props | Hook point |
 |---|---|---|
 | `run_start` | (none) | Landing FIGHT click |
-| `pick` | `fighter_id`, `era`, `step` | Each duel pick |
+| `pick` | `fighter_id`, `era`, `step` | Each duel pick (incl. cross-era swap before NEXT — see note below) |
 | `run_complete` | `archetype`, `old_picks` | Verdict mount |
 | `share_open` | (none) | Share screen mount |
 | `share_click` | `method` ∈ {copy, native, download, x, instagram, tiktok} | Each share method click |
 | `r_view` | (none) | `/r/[code]` mount |
 | `unlock_moment_shown` | (none) | UnlockMoment mount |
+
+**Note on `pick`:** fires on every tap, including cross-era retaps that swap the user's pick before NEXT (intentional signal that they changed their mind). Same-era retaps do NOT fire `pick` (the JSX handler short-circuits before `trackEvent`). Downstream consumers wanting "final pick" metrics should group by `(fighter_id, step)` and take the latest event.
 
 Adding a new event: extend the `AnalyticsEvent` discriminated union in `lib/analytics.ts` so the call site gets exhaustive prop type checking.

@@ -169,38 +169,49 @@ export const useRunStore = create<RunStore>()(
           duelState: era === 'old' ? 'pickedOld' : 'pickedNew',
         }),
 
-      // Side-effecting pick wrapper (Task 25). See the type comment above
-      // for the full contract; in short: skip-if-dedupe + fire-and-forget
-      // submit + sync pick(era). `next()` stays pure.
+      // Side-effecting pick wrapper. Contract:
+      //   - First pick of a step → markVoted + submitVote (subject to
+      //     per-matchup dedupe) + set duelState.
+      //   - Cross-era retap before next() → swap duelState only. Server vote
+      //     stays bound to the first pick; no second markVoted, no second
+      //     submitVote. This is the "re-pick before NEXT" affordance.
+      //   - Same-era retap → no-op (defensive backstop for the JSX same-era
+      //     guard in Duel.tsx; covers any future caller that forgets to gate).
+      //
+      // Trade-off: server vote is locked to the first pick on each matchup
+      // (per-matchup dedupe per CLAUDE.md's "one-vote-per-matchup-per-browser"
+      // contract). Local picks (and therefore archetype + share code) reflect
+      // the swap. Don't try to re-submit on swap — server dedupe would drop
+      // it, and a future dedupe relaxation would cause double-count drift.
       recordPickAndSubmit: (era) => {
-        const state = useRunStore.getState();
-        // Idempotency guard: a rapid double-tap (or stuck button under heavy
-        // re-render) must NOT submit twice for the same step. Once the user
-        // has committed a pick for this step, the action is a no-op until
-        // next() advances the step and resets duelState to 'idle'.
-        if (state.duelState !== 'idle') return;
+        // Re-read state fresh inside the function so a bounce-tap race
+        // (two taps queued in one React event flush) correctly sees the
+        // updated duelState after the first tap's synchronous pick() set.
+        const fresh = useRunStore.getState();
+        const currentEra: Era | null =
+          fresh.duelState === 'pickedOld'
+            ? 'old'
+            : fresh.duelState === 'pickedNew'
+              ? 'new'
+              : null;
 
-        const { order, step, runId } = state;
+        if (currentEra === era) return;
+
+        const { order, step, runId } = fresh;
         const fighterIndex = order[step];
-        // Defensive guard: order is empty in landing-state. The duel screen
-        // never calls this in that state, but a no-op keeps the contract
-        // identical to pick() for safety.
         if (fighterIndex === undefined) {
           useRunStore.getState().pick(era);
           return;
         }
         const fighter = FIGHTERS[fighterIndex];
-        const identity = useIdentityStore.getState();
-        const alreadyVoted = identity.votedMatchups[fighter.id] !== undefined;
 
-        if (!alreadyVoted) {
-          // Capture local intent synchronously — from this browser's
-          // perspective the user has expressed intent for this matchup.
-          // Subsequent picks for the same matchup skip the network call.
-          // submitVote() is documented (lib/api-client.ts) as never-rejecting,
-          // so no .catch() is needed — the resilience client swallows errors.
-          useIdentityStore.getState().markVoted(fighter.id, era);
-          void submitVote(fighter.id, era, runId);
+        if (currentEra === null) {
+          const identity = useIdentityStore.getState();
+          const alreadyVoted = identity.votedMatchups[fighter.id] !== undefined;
+          if (!alreadyVoted) {
+            useIdentityStore.getState().markVoted(fighter.id, era);
+            void submitVote(fighter.id, era, runId);
+          }
         }
 
         useRunStore.getState().pick(era);
