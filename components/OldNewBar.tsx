@@ -18,11 +18,18 @@ import type { CSSProperties } from 'react';
 export type OldNewBarProps = {
   oldPicks: number;
   newPicks: number;
-  height?: number;
+  /** Bar height in pixels (number) or any CSS length, e.g. a `clamp()`
+   *  expression to scale with viewport. Defaults to 16px. */
+  height?: number | string;
   style?: CSSProperties;
 };
 
-export function OldNewBar({ oldPicks, newPicks, height = 16, style }: OldNewBarProps) {
+export function OldNewBar({
+  oldPicks,
+  newPicks,
+  height = 16,
+  style,
+}: OldNewBarProps) {
   const total = oldPicks + newPicks;
   const oldPct = total === 0 ? 50 : (oldPicks / total) * 100;
   const newPct = 100 - oldPct;

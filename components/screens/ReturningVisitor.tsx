@@ -121,15 +121,16 @@ export function ReturningVisitor({ plays = 0, threshold = 30 }: ReturningVisitor
       />
 
       <div
+        className="content-column"
         style={{
           position: 'relative',
           zIndex: 4,
-          padding: '24px 20px 20px',
+          // Padding/gap come from the `.content-column` rule's CSS custom
+          // properties so the four long-form screens stay in sync.
+          padding: 'var(--col-pad-y-top) var(--col-pad-x) var(--col-pad-y-bot)',
           display: 'flex',
           flexDirection: 'column',
-          gap: 14,
-          minHeight: '100vh',
-          boxSizing: 'border-box',
+          gap: 'var(--col-gap)',
         }}
       >
         {/* Header — brand + welcome eyebrow. */}
@@ -140,7 +141,7 @@ export function ReturningVisitor({ plays = 0, threshold = 30 }: ReturningVisitor
             alignItems: 'center',
           }}
         >
-          <BrandMark size={11} />
+          <BrandMark size="clamp(11px, 1.6vw, 18px)" />
         </div>
 
         {/* Welcome lockup. */}
@@ -148,7 +149,7 @@ export function ReturningVisitor({ plays = 0, threshold = 30 }: ReturningVisitor
           <div
             className="nb-mono"
             style={{
-              fontSize: 10,
+              fontSize: 'clamp(10px, 1.2vw, 13px)',
               letterSpacing: '0.3em',
               color: 'var(--nb-mute)',
             }}
@@ -158,7 +159,7 @@ export function ReturningVisitor({ plays = 0, threshold = 30 }: ReturningVisitor
           <div
             className="nb-display nb-condensed"
             style={{
-              fontSize: 28,
+              fontSize: 'clamp(28px, 4vw, 52px)',
               lineHeight: 1,
               color: 'var(--nb-bone)',
               marginTop: 4,
@@ -182,7 +183,7 @@ export function ReturningVisitor({ plays = 0, threshold = 30 }: ReturningVisitor
           <div
             data-testid="returning-card-stage"
             style={{
-              width: 'min(76%, 320px)',
+              width: 'var(--card-stage-w-sm)',
               boxShadow:
                 '0 24px 60px -10px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.08)',
               containerType: 'inline-size',
@@ -199,7 +200,7 @@ export function ReturningVisitor({ plays = 0, threshold = 30 }: ReturningVisitor
           style={{
             border: '1px solid var(--nb-line)',
             background: 'rgba(0,0,0,0.4)',
-            padding: '10px 14px',
+            padding: 'clamp(10px, 1.4vw, 16px) clamp(14px, 1.8vw, 22px)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'baseline',
@@ -209,7 +210,7 @@ export function ReturningVisitor({ plays = 0, threshold = 30 }: ReturningVisitor
           <div
             className="nb-mono"
             style={{
-              fontSize: 10,
+              fontSize: 'clamp(10px, 1.2vw, 13px)',
               letterSpacing: '0.2em',
               color: 'var(--nb-mute)',
             }}
@@ -219,7 +220,7 @@ export function ReturningVisitor({ plays = 0, threshold = 30 }: ReturningVisitor
           <div
             className="nb-display nb-condensed"
             style={{
-              fontSize: 14,
+              fontSize: 'clamp(14px, 1.6vw, 18px)',
               color: 'var(--nb-bone)',
               letterSpacing: '0.04em',
             }}
@@ -230,14 +231,20 @@ export function ReturningVisitor({ plays = 0, threshold = 30 }: ReturningVisitor
         </div>
 
         {/* CTAs — per Q2, NO replay. SEE SCOREBOARD + SHARE YOUR VERDICT. */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 'clamp(10px, 1.5vw, 16px)',
+          }}
+        >
           <Link
             href="/scoreboard"
             className="btn-new"
             data-testid="returning-cta-scoreboard"
             style={{
-              fontSize: 13,
-              padding: '14px',
+              fontSize: 'clamp(13px, 1.5vw, 17px)',
+              padding: 'clamp(14px, 1.8vw, 20px)',
               justifyContent: 'center',
               textAlign: 'center',
               textDecoration: 'none',
@@ -253,8 +260,8 @@ export function ReturningVisitor({ plays = 0, threshold = 30 }: ReturningVisitor
             onClick={handleShare}
             data-testid="returning-cta-share"
             style={{
-              fontSize: 13,
-              padding: '14px',
+              fontSize: 'clamp(13px, 1.5vw, 17px)',
+              padding: 'clamp(14px, 1.8vw, 20px)',
               justifyContent: 'center',
               textAlign: 'center',
             }}

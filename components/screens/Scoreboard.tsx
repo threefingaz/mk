@@ -54,11 +54,12 @@ export function Scoreboard({ unlocked, crowdStats, plays, threshold }: Scoreboar
         style={{
           position: 'relative',
           zIndex: 4,
-          padding: '32px 24px 24px',
+          padding: 'clamp(32px, 4vw, 56px) clamp(20px, 3vw, 40px) clamp(24px, 3vw, 40px)',
           display: 'flex',
           flexDirection: 'column',
-          gap: 20,
-          maxWidth: 640,
+          gap: 'clamp(20px, 2.5vw, 32px)',
+          width: '100%',
+          maxWidth: 900,
           margin: '0 auto',
           minHeight: '100vh',
           boxSizing: 'border-box',
@@ -72,10 +73,14 @@ export function Scoreboard({ unlocked, crowdStats, plays, threshold }: Scoreboar
             alignItems: 'center',
           }}
         >
-          <BrandMark size={14} />
+          <BrandMark size="clamp(14px, 1.6vw, 18px)" />
           <div
             className="nb-mono"
-            style={{ fontSize: 10, letterSpacing: '0.25em', color: 'var(--nb-mute)' }}
+            style={{
+              fontSize: 'clamp(10px, 1.1vw, 13px)',
+              letterSpacing: '0.25em',
+              color: 'var(--nb-mute)',
+            }}
           >
             SCOREBOARD
           </div>
@@ -85,14 +90,18 @@ export function Scoreboard({ unlocked, crowdStats, plays, threshold }: Scoreboar
         <div>
           <div
             className="nb-mono"
-            style={{ fontSize: 11, letterSpacing: '0.25em', color: 'var(--nb-mute)' }}
+            style={{
+              fontSize: 'clamp(11px, 1.2vw, 14px)',
+              letterSpacing: '0.25em',
+              color: 'var(--nb-mute)',
+            }}
           >
             THE INTERNET&apos;S VERDICT
           </div>
           <h1
             className="nb-display nb-condensed"
             style={{
-              fontSize: 40,
+              fontSize: 'clamp(40px, 6vw, 72px)',
               lineHeight: 1,
               color: 'var(--nb-bone)',
               margin: '6px 0 0',
@@ -152,21 +161,21 @@ function LockedView({
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        gap: 20,
+        gap: 'clamp(20px, 2.5vw, 32px)',
       }}
     >
       <div
         style={{
           border: '1px solid var(--nb-line)',
           background: 'rgba(255,255,255,0.02)',
-          padding: 24,
+          padding: 'clamp(24px, 3vw, 40px)',
           textAlign: 'center',
         }}
       >
         <div
           className="nb-mono"
           style={{
-            fontSize: 12,
+            fontSize: 'clamp(12px, 1.3vw, 15px)',
             letterSpacing: '0.18em',
             color: 'var(--nb-mute)',
             marginBottom: 12,
@@ -178,14 +187,18 @@ function LockedView({
         <div
           data-testid="scoreboard-countdown"
           className="nb-display nb-condensed"
-          style={{ fontSize: 72, lineHeight: 0.9, color: 'var(--nb-red)' }}
+          style={{
+            fontSize: 'clamp(72px, 10vw, 128px)',
+            lineHeight: 0.9,
+            color: 'var(--nb-red)',
+          }}
         >
           {playsLeft}
         </div>
         <div
           className="nb-mono"
           style={{
-            fontSize: 11,
+            fontSize: 'clamp(11px, 1.2vw, 14px)',
             letterSpacing: '0.22em',
             color: 'var(--nb-mute)',
             marginTop: 4,
@@ -214,7 +227,7 @@ function LockedView({
         <div
           className="nb-mono"
           style={{
-            fontSize: 10,
+            fontSize: 'clamp(10px, 1.1vw, 13px)',
             letterSpacing: '0.18em',
             color: 'var(--nb-mute)',
             marginTop: 8,
@@ -240,8 +253,8 @@ function LockedView({
           alignSelf: 'stretch',
           textAlign: 'center',
           justifyContent: 'center',
-          padding: '16px',
-          fontSize: 14,
+          padding: 'clamp(16px, 1.8vw, 22px)',
+          fontSize: 'clamp(14px, 1.5vw, 18px)',
           letterSpacing: '0.12em',
         }}
       >
@@ -296,7 +309,7 @@ function ScoreboardTable({
         margin: 0,
         display: 'flex',
         flexDirection: 'column',
-        gap: 12,
+        gap: 'clamp(12px, 1.4vw, 20px)',
       }}
     >
       {FIGHTERS.map((fighter) => {
@@ -336,8 +349,8 @@ function ScoreboardRow({
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: 6,
-        padding: '10px 0',
+        gap: 'clamp(6px, 0.8vw, 10px)',
+        padding: 'clamp(10px, 1.2vw, 16px) 0',
         borderBottom: '1px solid var(--nb-line)',
       }}
     >
@@ -352,7 +365,11 @@ function ScoreboardRow({
       >
         <div
           className="nb-display nb-condensed"
-          style={{ fontSize: 18, lineHeight: 1, color: 'var(--nb-bone)' }}
+          style={{
+            fontSize: 'clamp(18px, 2.4vw, 28px)',
+            lineHeight: 1,
+            color: 'var(--nb-bone)',
+          }}
         >
           {name}
         </div>
@@ -372,7 +389,11 @@ function ScoreboardRow({
       </div>
 
       {/* Old/New bar */}
-      <OldNewBar oldPicks={stats.old} newPicks={stats.new} height={12} />
+      <OldNewBar
+        oldPicks={stats.old}
+        newPicks={stats.new}
+        height="clamp(12px, 1.4vw, 18px)"
+      />
 
       {/* Actor row — 1995 left (cream ob-mono), 2026 right (mute nb-mono).
           The winner dot is rendered up in the name row (top-right of card) so
@@ -388,7 +409,7 @@ function ScoreboardRow({
         <span
           className="ob-mono"
           style={{
-            fontSize: 10,
+            fontSize: 'clamp(10px, 1.1vw, 13px)',
             color: 'var(--ob-bone)',
             letterSpacing: '0.04em',
           }}
@@ -398,7 +419,7 @@ function ScoreboardRow({
         <span
           className="nb-mono"
           style={{
-            fontSize: 10,
+            fontSize: 'clamp(10px, 1.1vw, 13px)',
             color: 'var(--nb-mute)',
             letterSpacing: '0.06em',
           }}

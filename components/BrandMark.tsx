@@ -14,7 +14,7 @@ export function BrandMark({
   size = 18,
   vertical = false,
 }: {
-  size?: number;
+  size?: number | string;
   vertical?: boolean;
 }) {
   const base: CSSProperties = { fontSize: size };

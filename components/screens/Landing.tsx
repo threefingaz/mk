@@ -81,27 +81,27 @@ export function Landing({ plays = 0, threshold = 30 }: LandingProps) {
           position: 'relative',
           zIndex: 4,
           flex: 1,
-          padding: '48px 24px',
+          padding: 'clamp(48px, 6vw, 96px) clamp(24px, 5vw, 64px)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 28,
+          gap: 'clamp(28px, 3.5vw, 48px)',
           textAlign: 'center',
         }}
       >
         {/* Vertical BrandMark straddling the seam (horizontally centered). */}
-        <BrandMark size={28} vertical />
+        <BrandMark size="clamp(28px, 4vw, 48px)" vertical />
 
         {/* Pre / post-unlock chip. */}
         {unlocked ? (
           <div
             className="nb-mono"
             style={{
-              fontSize: 11,
+              fontSize: 'clamp(11px, 1.2vw, 14px)',
               letterSpacing: '0.2em',
               color: 'var(--nb-bone)',
-              padding: '6px 12px',
+              padding: 'clamp(6px, 0.8vw, 10px) clamp(12px, 1.4vw, 18px)',
               border: '1px solid var(--nb-red)',
               background: 'rgba(0,0,0,0.4)',
               display: 'inline-flex',
@@ -125,10 +125,10 @@ export function Landing({ plays = 0, threshold = 30 }: LandingProps) {
           <div
             className="nb-mono"
             style={{
-              fontSize: 10,
+              fontSize: 'clamp(10px, 1.1vw, 13px)',
               letterSpacing: '0.2em',
               color: 'var(--nb-mute, rgba(255,255,255,0.7))',
-              padding: '6px 12px',
+              padding: 'clamp(6px, 0.8vw, 10px) clamp(12px, 1.4vw, 18px)',
               border: '1px solid rgba(255,255,255,0.18)',
               background: 'rgba(0,0,0,0.4)',
             }}
@@ -151,9 +151,9 @@ export function Landing({ plays = 0, threshold = 30 }: LandingProps) {
             start();
           }}
           style={{
-            fontSize: 22,
+            fontSize: 'clamp(22px, 2.6vw, 36px)',
             letterSpacing: '0.12em',
-            padding: '22px 56px',
+            padding: 'clamp(22px, 2.5vw, 32px) clamp(56px, 7vw, 96px)',
             marginTop: 8,
           }}
         >

@@ -81,7 +81,10 @@ export function UnlockMoment({ plays = 30 }: UnlockMomentProps) {
   return (
     <div
       data-testid="unlock-moment-screen"
-      className="era-new"
+      // `unlock-celebration` is load-bearing for the reduced-motion guard
+      // in globals.css (suppresses reveal-up + glitch-x + pulse-red). Don't
+      // remove or rename without updating the corresponding CSS rule.
+      className="era-new unlock-celebration"
       style={{
         position: 'relative',
         width: '100%',
@@ -127,14 +130,13 @@ export function UnlockMoment({ plays = 30 }: UnlockMomentProps) {
       </div>
 
       <div
+        className="content-column"
         style={{
           position: 'relative',
           zIndex: 4,
-          padding: '24px 20px',
+          padding: 'clamp(24px, 4vw, 48px) clamp(20px, 4vw, 40px)',
           display: 'flex',
           flexDirection: 'column',
-          minHeight: '100vh',
-          boxSizing: 'border-box',
         }}
       >
         {/* Header — brand + LIVE chip (matches prototype layout). */}
@@ -145,7 +147,10 @@ export function UnlockMoment({ plays = 30 }: UnlockMomentProps) {
             alignItems: 'center',
           }}
         >
-          <BrandMark size={11} />
+          <BrandMark size="clamp(11px, 1.6vw, 18px)" />
+          {/* LIVE chip uses fixed pixel sizing on purpose — chips read as
+              fixed UI furniture rather than scaling type, so the dot, padding,
+              and "LIVE" label stay constant across breakpoints. */}
           <div
             style={{
               display: 'flex',
@@ -186,13 +191,13 @@ export function UnlockMoment({ plays = 30 }: UnlockMomentProps) {
             justifyContent: 'center',
             alignItems: 'center',
             textAlign: 'center',
-            gap: 16,
+            gap: 'clamp(16px, 2.5vw, 32px)',
           }}
         >
           <div
             className="nb-mono"
             style={{
-              fontSize: 10,
+              fontSize: 'clamp(10px, 1.3vw, 14px)',
               letterSpacing: '0.4em',
               color: 'var(--nb-red)',
               animation: 'glitch-x 4s infinite',
@@ -205,7 +210,7 @@ export function UnlockMoment({ plays = 30 }: UnlockMomentProps) {
             data-testid="unlock-headline"
             className="nb-display nb-condensed"
             style={{
-              fontSize: 64,
+              fontSize: 'clamp(64px, 10vw, 128px)',
               lineHeight: 0.85,
               color: 'var(--nb-bone)',
               letterSpacing: '0.005em',
@@ -222,10 +227,10 @@ export function UnlockMoment({ plays = 30 }: UnlockMomentProps) {
             data-testid="unlock-subhead"
             className="nb-mono"
             style={{
-              fontSize: 11,
+              fontSize: 'clamp(11px, 1.3vw, 14px)',
               letterSpacing: '0.18em',
               color: 'var(--nb-mute)',
-              maxWidth: 320,
+              maxWidth: 'clamp(320px, 50vw, 480px)',
               textWrap: 'balance',
             }}
           >
@@ -241,14 +246,14 @@ export function UnlockMoment({ plays = 30 }: UnlockMomentProps) {
             className="btn-new btn-new-red"
             data-testid="unlock-cta-scoreboard"
             style={{
-              fontSize: 14,
-              padding: '14px 28px',
+              fontSize: 'clamp(14px, 1.6vw, 18px)',
+              padding: 'clamp(14px, 1.8vw, 20px) clamp(28px, 4vw, 56px)',
               justifyContent: 'center',
               textAlign: 'center',
               textDecoration: 'none',
               display: 'inline-flex',
               alignItems: 'center',
-              minWidth: 220,
+              minWidth: 'clamp(220px, 30vw, 320px)',
             }}
           >
             SEE THE BOARD →

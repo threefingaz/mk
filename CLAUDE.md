@@ -100,6 +100,31 @@ Every new network call must follow this contract: timeout, silent fallback, no U
 
 Truly fixing #2 requires a Redis transaction primitive (`MULTI`/`EXEC` or a Lua script) so "claim + increment" is atomic. Our KV abstraction (`@vercel/kv`-backed `lib/kv.ts`) doesn't expose that today, and the failure window is narrow enough (requires network-timeout-class server latency AND a pre-increment failure on the first attempt) that we accept it as the right trade-off for a fan poll. Acceptable failure mode: an occasional missed play count during rare KV instability.
 
+## Desktop layout
+
+Layout flip at `@media (min-width: 900px)`. Fluid type/spacing via `clamp()`. Era invariants apply at all viewport widths — never harmonize the split, even on wide screens.
+
+- Mobile-first stays the default; the desktop layer is a progressive enhancement.
+- `app/page.tsx::PAGE_FRAME_STYLE` no longer caps width — each screen owns its own content max-width via inline `clamp()` or the `.content-column` helper in `app/globals.css`.
+- Inline `style={{}}` always wins on specificity. For values that differ across breakpoints, prefer `clamp()` over media queries; reserve `@media (min-width: 900px) { ... !important }` for properties `clamp()` can't express (e.g. Duel's `flex-direction` flip via `.duel-cards`). Don't sprinkle `!important` on rules that have no competing inline style — the only load-bearing `!important` in the desktop block is `flex-direction: row` on `.duel-cards`.
+- `MuteToggle` is `position: fixed` and anchors to the viewport corner — don't constrain it to a content column. `DisclaimerRibbon` is NOT fixed; it renders inline as a normal-flow `<div>` at the bottom of the page and spans full width (since Task 1 lifted the page-frame cap). Don't wrap it in a content column either — full-bleed at the bottom is the intended treatment.
+
+### Duel-specific helpers (load-bearing)
+
+`components/screens/Duel.tsx` and `app/globals.css` are coupled by a small set of class names. Renaming any of them silently breaks the desktop layout flip.
+
+- `.duel-cards` — outer wrapper around the two card slots. CSS flips `flex-direction` from `column` to `row` at >=900px. The inline style on the wrapper deliberately OMITS `gap` so the desktop CSS `gap: clamp(...)` rule takes effect (an inline `gap: 0` would override it on specificity).
+- `.duel-card-slot` — wraps each `EraCard`. Mobile: no effect. Desktop: `flex: 1 1 400px; min-width: 0; max-width: 400px` so two slots + gap shrink to fit narrow desktop viewports without overflowing.
+- `.duel-seam-h` / `.duel-seam-v` — the mobile-only horizontal seam and desktop-only vertical seam, respectively. CSS toggles `display` between them at the breakpoint. Duel renders BOTH `<VsSeam>` instances and passes distinct `testId="vs-seam-h"` / `testId="vs-seam-v"` so `getByTestId('vs-seam')` doesn't trip strict mode (the legacy `vs-seam` default is preserved for any caller that renders only one).
+
+### Reading-column tokens
+
+`.content-column` exposes shared scale tokens as CSS custom properties (`--col-pad-y-top`, `--col-pad-y-bot`, `--col-pad-x`, `--col-gap`, `--card-stage-w`) so Verdict / Share / ReturningVisitor / `/r/[code]` don't copy-paste the same `clamp()` tuples. Inline styles consume them via `var()`. UnlockMoment doesn't read these — it sets its own inline `padding: clamp(24px, 4vw, 48px) clamp(20px, 4vw, 40px)` (both axes clamped directly, not via the shared `--col-*` vars) — and Share/ReturningVisitor intentionally render a smaller verdict-card stage so they don't read `--card-stage-w`.
+
+### Reduced-motion guard for UnlockMoment
+
+UnlockMoment's celebratory animations (`reveal-up` headline, `glitch-x` eyebrow, `pulse-red` confetti / LIVE dot) are suppressed under `prefers-reduced-motion: reduce` by a guard in `app/globals.css` keyed on the `.unlock-celebration` class on the screen root. The class is load-bearing — `components/screens/UnlockMoment.test.tsx` anchors that contract. Rename one without the other and accessibility silently breaks.
+
 ## Shape variants — locked
 
 `<html data-btn-shape="banner" data-card-shape="tomb">` is the only variant pair shipped. The alternate `chamfer` / `slab` / `skew` button rules and `chamfer` / `slab` card rules were stripped from `app/globals.css` (Q12B). Don't re-add them — the design system ships one shape pair on purpose.

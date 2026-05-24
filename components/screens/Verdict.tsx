@@ -134,29 +134,34 @@ export function Verdict() {
       />
 
       <div
+        className="content-column"
         style={{
           position: 'relative',
           zIndex: 4,
-          padding: '24px 20px 20px',
+          // Padding/gap come from the `.content-column` rule's CSS custom
+          // properties so the four long-form screens stay in sync.
+          padding: 'var(--col-pad-y-top) var(--col-pad-x) var(--col-pad-y-bot)',
           display: 'flex',
           flexDirection: 'column',
-          gap: 14,
-          minHeight: '100vh',
-          boxSizing: 'border-box',
+          gap: 'var(--col-gap)',
         }}
       >
         {/* Header — VERDICT lockup. */}
         <div style={{ textAlign: 'center' }}>
           <div
             className="nb-mono"
-            style={{ fontSize: 9, letterSpacing: '0.4em', color: 'var(--nb-red)' }}
+            style={{
+              fontSize: 'clamp(9px, 1.2vw, 12px)',
+              letterSpacing: '0.4em',
+              color: 'var(--nb-red)',
+            }}
           >
             ·  VERDICT  ·
           </div>
           <div
             className="nb-display nb-condensed"
             style={{
-              fontSize: 14,
+              fontSize: 'clamp(14px, 1.8vw, 20px)',
               color: 'var(--nb-mute)',
               marginTop: 4,
               letterSpacing: '0.18em',
@@ -181,7 +186,7 @@ export function Verdict() {
           <div
             data-testid="verdict-card-stage"
             style={{
-              width: 'min(82%, 360px)',
+              width: 'var(--card-stage-w)',
               boxShadow:
                 '0 30px 80px -10px oklch(0.45 0.22 27 / 0.5), 0 0 0 1px rgba(255,255,255,0.08)',
               animation: 'reveal-up 600ms ease-out',
@@ -193,15 +198,21 @@ export function Verdict() {
         </div>
 
         {/* CTAs — per Q2, NO RUN AGAIN. SHARE + SEE SCOREBOARD only. */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 'clamp(10px, 1.5vw, 16px)',
+          }}
+        >
           <button
             type="button"
             className="btn-new btn-new-red"
             onClick={() => advanceToShare()}
             data-testid="verdict-share"
             style={{
-              fontSize: 14,
-              padding: '14px',
+              fontSize: 'clamp(14px, 1.6vw, 18px)',
+              padding: 'clamp(14px, 1.8vw, 20px)',
               justifyContent: 'center',
               textAlign: 'center',
             }}
@@ -213,8 +224,8 @@ export function Verdict() {
             className="btn-new"
             data-testid="verdict-scoreboard"
             style={{
-              fontSize: 14,
-              padding: '14px',
+              fontSize: 'clamp(14px, 1.6vw, 18px)',
+              padding: 'clamp(14px, 1.8vw, 20px)',
               justifyContent: 'center',
               textAlign: 'center',
               textDecoration: 'none',

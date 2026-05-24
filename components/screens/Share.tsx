@@ -195,15 +195,16 @@ export function Share() {
       }}
     >
       <div
+        className="content-column"
         style={{
           position: 'relative',
           zIndex: 4,
-          padding: '24px 20px 20px',
+          // Padding/gap come from the `.content-column` rule's CSS custom
+          // properties so the four long-form screens stay in sync.
+          padding: 'var(--col-pad-y-top) var(--col-pad-x) var(--col-pad-y-bot)',
           display: 'flex',
           flexDirection: 'column',
-          gap: 14,
-          minHeight: '100vh',
-          boxSizing: 'border-box',
+          gap: 'var(--col-gap)',
         }}
       >
         {/* Header — BACK link + reveal title. */}
@@ -224,7 +225,7 @@ export function Share() {
               background: 'transparent',
               border: 0,
               color: 'var(--nb-mute)',
-              fontSize: 11,
+              fontSize: 'clamp(11px, 1.1vw, 13px)',
               letterSpacing: '0.18em',
               cursor: 'pointer',
               padding: 0,
@@ -238,14 +239,18 @@ export function Share() {
         <div style={{ textAlign: 'center' }}>
           <div
             className="nb-mono"
-            style={{ fontSize: 10, letterSpacing: '0.3em', color: 'var(--nb-mute)' }}
+            style={{
+              fontSize: 'clamp(10px, 1.1vw, 13px)',
+              letterSpacing: '0.3em',
+              color: 'var(--nb-mute)',
+            }}
           >
             YOUR VERDICT IS READY
           </div>
           <div
             className="nb-display nb-condensed"
             style={{
-              fontSize: 24,
+              fontSize: 'clamp(24px, 3vw, 40px)',
               lineHeight: 1,
               color: 'var(--nb-bone)',
               marginTop: 4,
@@ -255,9 +260,10 @@ export function Share() {
           </div>
         </div>
 
-        {/* Centered verdict card preview, scaled smaller than the verdict
-            screen (78% per prototype). containerType:inline-size lets the
-            inner card's cqw-based fluid type compose cleanly. */}
+        {/* Centered verdict card preview. The cqw-based VerdictCard type
+            scales with the stage width — bumping the cap on desktop scales
+            the whole card up. Matches Verdict.tsx's stage sizing for
+            visual consistency across the two screens. */}
         <div
           style={{
             flex: 1,
@@ -269,7 +275,7 @@ export function Share() {
           <div
             data-testid="share-card-stage"
             style={{
-              width: 'min(78%, 340px)',
+              width: 'var(--card-stage-w-sm)',
               boxShadow:
                 '0 24px 60px -10px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.08)',
               containerType: 'inline-size',
@@ -281,7 +287,13 @@ export function Share() {
 
         {/* Primary share row — Copy Link + Download Image. Native Share
             takes the place of Copy Link when supported (mobile / PWA). */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 'clamp(10px, 1.2vw, 16px)',
+          }}
+        >
           {canNativeShare ? (
             <button
               type="button"
@@ -289,8 +301,8 @@ export function Share() {
               onClick={handleNativeShare}
               data-testid="share-native"
               style={{
-                fontSize: 13,
-                padding: '14px',
+                fontSize: 'clamp(13px, 1.4vw, 16px)',
+                padding: 'clamp(14px, 1.6vw, 18px)',
                 justifyContent: 'center',
                 textAlign: 'center',
               }}
@@ -304,8 +316,8 @@ export function Share() {
               onClick={handleCopyLink}
               data-testid="share-copy"
               style={{
-                fontSize: 13,
-                padding: '14px',
+                fontSize: 'clamp(13px, 1.4vw, 16px)',
+                padding: 'clamp(14px, 1.6vw, 18px)',
                 justifyContent: 'center',
                 textAlign: 'center',
               }}
@@ -319,8 +331,8 @@ export function Share() {
             onClick={handleDownloadImage}
             data-testid="share-download"
             style={{
-              fontSize: 13,
-              padding: '14px',
+              fontSize: 'clamp(13px, 1.4vw, 16px)',
+              padding: 'clamp(14px, 1.6vw, 18px)',
               justifyContent: 'center',
               textAlign: 'center',
             }}
@@ -342,7 +354,7 @@ export function Share() {
                 background: 'transparent',
                 border: 0,
                 color: 'var(--nb-mute)',
-                fontSize: 10,
+                fontSize: 'clamp(10px, 1vw, 12px)',
                 letterSpacing: '0.18em',
                 cursor: 'pointer',
                 padding: 0,
@@ -358,7 +370,7 @@ export function Share() {
           style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr 1fr',
-            gap: 8,
+            gap: 'clamp(8px, 1vw, 14px)',
           }}
         >
           <button
@@ -367,8 +379,8 @@ export function Share() {
             onClick={() => handlePlatformShare('x')}
             data-testid="share-platform-x"
             style={{
-              fontSize: 11,
-              padding: '10px',
+              fontSize: 'clamp(11px, 1.2vw, 14px)',
+              padding: 'clamp(10px, 1.2vw, 14px)',
               justifyContent: 'center',
               textAlign: 'center',
             }}
@@ -381,8 +393,8 @@ export function Share() {
             onClick={() => handlePlatformShare('instagram')}
             data-testid="share-platform-instagram"
             style={{
-              fontSize: 11,
-              padding: '10px',
+              fontSize: 'clamp(11px, 1.2vw, 14px)',
+              padding: 'clamp(10px, 1.2vw, 14px)',
               justifyContent: 'center',
               textAlign: 'center',
             }}
@@ -395,8 +407,8 @@ export function Share() {
             onClick={() => handlePlatformShare('tiktok')}
             data-testid="share-platform-tiktok"
             style={{
-              fontSize: 11,
-              padding: '10px',
+              fontSize: 'clamp(11px, 1.2vw, 14px)',
+              padding: 'clamp(10px, 1.2vw, 14px)',
               justifyContent: 'center',
               textAlign: 'center',
             }}

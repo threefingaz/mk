@@ -9,9 +9,13 @@ import type { CSSProperties } from 'react';
 
 export type VsSeamProps = {
   vertical?: boolean;
+  /** Override the `data-testid` (defaults to `vs-seam`). Duel renders TWO
+   *  VsSeams (one mobile-only, one desktop-only) and passes distinct ids so
+   *  `getByTestId` doesn't trip strict-mode on duplicate matches. */
+  testId?: string;
 };
 
-export function VsSeam({ vertical = true }: VsSeamProps) {
+export function VsSeam({ vertical = true, testId = 'vs-seam' }: VsSeamProps) {
   const wrap: CSSProperties = {
     display: 'flex',
     flexDirection: vertical ? 'column' : 'row',
@@ -28,6 +32,11 @@ export function VsSeam({ vertical = true }: VsSeamProps) {
     textShadow: '0 0 18px var(--nb-red)',
   };
 
+  // NOTE: when `vertical={false}` (desktop horizontal layout), the line
+  // element uses `flex: 1 1 auto` — callers MUST place this seam in a
+  // content-sized parent (not a parent that grants arbitrary extra space)
+  // or the line will stretch unexpectedly. Duel wraps each seam in
+  // `.duel-seam-h` / `.duel-seam-v` which are content-sized.
   const line: CSSProperties = {
     flex: vertical ? '0 0 auto' : '1 1 auto',
     width: vertical ? 60 : 1,
@@ -38,7 +47,7 @@ export function VsSeam({ vertical = true }: VsSeamProps) {
   };
 
   return (
-    <div style={wrap} data-testid="vs-seam">
+    <div style={wrap} data-testid={testId}>
       <div className="nb-display nb-condensed" style={label}>
         VS
       </div>

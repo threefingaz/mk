@@ -13,8 +13,9 @@
 //      b. hasVoted                                       → <ReturningVisitor />
 //      c. else                                           → <Landing />
 //
-// Persistent overlays render regardless of phase: <MuteToggle> (top-right of
-// the design canvas, fixed) + <DisclaimerRibbon> (bottom-fixed).
+// Persistent overlays render regardless of phase: <MuteToggle> (position:
+// fixed at bottom-right of the viewport) + <DisclaimerRibbon> (normal-flow
+// `<div>` rendered at the bottom of the page after the cap-lift, full-bleed).
 //
 // Phase 2 (Task 25): crowd state comes from /api/results via the resilience
 // client (lib/api-client.ts). Failures resolve to a synthesized pre-unlock
@@ -43,12 +44,13 @@ import { useIdentityStore, useRunStore } from '@/lib/store';
 import { setMuted as setAudioMuted } from '@/lib/audio';
 import { useHydrated } from '@/hooks/useHydrated';
 
-// Phone-shaped canvas wrapper. v1 is mobile-first; on desktop we cap the
-// width to 480px and center it so the layout reads as the same "phone-shaped"
-// experience as the design prototype's 390-wide frame.
+// Full-viewport canvas wrapper. v1 is mobile-first but the desktop layout
+// (Task 1 of the desktop-layout plan) lifts the 480px cap so each screen owns
+// its own content max-width via inline `clamp()` + the `.content-column`
+// helper in globals.css. Era backdrops naturally fill the viewport at any
+// width because they use absolute-positioned `.era-old` / `.era-new` halves.
 const PAGE_FRAME_STYLE = {
-  maxWidth: 480,
-  margin: '0 auto',
+  width: '100%',
   minHeight: '100vh',
   position: 'relative' as const,
   background: '#000',

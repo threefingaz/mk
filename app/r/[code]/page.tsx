@@ -147,8 +147,6 @@ export default async function ResultPage({ params }: { params: Promise<PageParam
         width: '100%',
         minHeight: '100vh',
         background: '#000',
-        maxWidth: 480,
-        margin: '0 auto',
         overflow: 'hidden',
       }}
     >
@@ -166,15 +164,16 @@ export default async function ResultPage({ params }: { params: Promise<PageParam
       />
 
       <div
+        className="content-column"
         style={{
           position: 'relative',
           zIndex: 4,
-          padding: '24px 20px 20px',
+          // Padding/gap come from the `.content-column` rule's CSS custom
+          // properties so the four long-form screens stay in sync.
+          padding: 'var(--col-pad-y-top) var(--col-pad-x) var(--col-pad-y-bot)',
           display: 'flex',
           flexDirection: 'column',
-          gap: 14,
-          minHeight: '100vh',
-          boxSizing: 'border-box',
+          gap: 'var(--col-gap)',
         }}
       >
         {/* Header — matches Verdict.tsx framing but with "A FRIEND'S VERDICT"
@@ -182,14 +181,18 @@ export default async function ResultPage({ params }: { params: Promise<PageParam
         <div style={{ textAlign: 'center' }}>
           <div
             className="nb-mono"
-            style={{ fontSize: 9, letterSpacing: '0.4em', color: 'var(--nb-red)' }}
+            style={{
+              fontSize: 'clamp(9px, 1.2vw, 12px)',
+              letterSpacing: '0.4em',
+              color: 'var(--nb-red)',
+            }}
           >
             ·  A FRIEND&apos;S VERDICT  ·
           </div>
           <div
             className="nb-display nb-condensed"
             style={{
-              fontSize: 14,
+              fontSize: 'clamp(14px, 1.8vw, 20px)',
               color: 'var(--nb-mute)',
               marginTop: 4,
               letterSpacing: '0.18em',
@@ -213,7 +216,7 @@ export default async function ResultPage({ params }: { params: Promise<PageParam
           <div
             data-testid="r-result-card-stage"
             style={{
-              width: 'min(82%, 360px)',
+              width: 'var(--card-stage-w)',
               boxShadow:
                 '0 30px 80px -10px oklch(0.45 0.22 27 / 0.5), 0 0 0 1px rgba(255,255,255,0.08)',
               containerType: 'inline-size',
@@ -231,8 +234,8 @@ export default async function ResultPage({ params }: { params: Promise<PageParam
             data-testid="r-play-yourself"
             className="btn-new btn-new-red"
             style={{
-              fontSize: 14,
-              padding: '14px 28px',
+              fontSize: 'clamp(14px, 1.6vw, 18px)',
+              padding: 'clamp(14px, 1.8vw, 20px) clamp(28px, 3.5vw, 44px)',
               justifyContent: 'center',
               textAlign: 'center',
               textDecoration: 'none',

@@ -41,6 +41,15 @@ See `.env.local.example`. All are optional for local dev:
 | `npm run e2e:install` | One-time install of the Playwright Chromium browser. Run once after cloning. |
 | `npm run lint` | ESLint. |
 
+## Responsive layout
+
+Mobile-first design with a single layout-flip breakpoint at `min-width: 900px`:
+
+- **<900px (mobile / tablet portrait)**: stacked layout — the Duel renders two `EraCard`s top/bottom with a horizontal `VS` seam between them.
+- **>=900px (desktop / tablet landscape)**: side-by-side layout — Duel cards reflow to a row with a vertical `VS` seam, each card capped at 400px wide. Long-form screens (Verdict, Share, UnlockMoment, ReturningVisitor, `/r/[code]`) use a centered reading column capped via the `.content-column` helper. Typography and spacing scale via `clamp()` so everything tunes itself between the two breakpoints.
+
+Era invariants (the visual split between `[data-era="old"]` and `[data-era="new"]`) apply at every viewport — the desktop layer never harmonizes them. `MuteToggle` is `position: fixed` and anchors to the viewport corner at all sizes; `DisclaimerRibbon` renders inline at the bottom of the page in normal flow (full-width since Task 1 lifted the page-frame cap) — it's not viewport-pinned.
+
 ## Architecture
 
 - **Next.js 16 App Router** — server + client components, edge runtime for `/api/og`.

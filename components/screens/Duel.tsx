@@ -19,9 +19,11 @@
 //     crowdStats[fighter.id] is present, an <OldNewBar> renders between the
 //     cards and the NEXT button with the `barfill` keyframe animation.
 //
-// Mobile-first layout: two stacked EraCards (old on top, new on bottom) with
-// <VsSeam /> between them. Per Task 12 we ship one layout for v1; the desktop
-// side-by-side variant is deferred.
+// Layout: two EraCards. Stacked on mobile (old on top, new on bottom) with a
+// horizontal <VsSeam /> between them; at ≥900px the .duel-cards rule in
+// globals.css flips them to side-by-side (old-LEFT, new-RIGHT) with the
+// vertical-variant <VsSeam /> visible instead. See
+// docs/plans/completed/20260524-desktop-layout.md (Task 3).
 //
 // Per the design handoff, the character name lives in a screen-level anchor
 // (mono "1995 / 2026" lockup + name) above the cards, so the EraCards use
@@ -101,10 +103,10 @@ export function Duel() {
           position: 'relative',
           zIndex: 4,
           flex: 1,
-          padding: '24px 16px 20px',
+          padding: 'clamp(24px, 3vw, 48px) clamp(16px, 3vw, 48px) clamp(20px, 2.5vw, 40px)',
           display: 'flex',
           flexDirection: 'column',
-          gap: 12,
+          gap: 'clamp(12px, 2vw, 24px)',
           minHeight: 0,
         }}
       >
@@ -135,7 +137,7 @@ export function Duel() {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'baseline',
-              gap: 18,
+              gap: 'clamp(18px, 3vw, 36px)',
             }}
           >
             <span
@@ -172,7 +174,7 @@ export function Duel() {
           <div
             className="nb-display nb-condensed"
             style={{
-              fontSize: 30,
+              fontSize: 'clamp(30px, 5vw, 64px)',
               lineHeight: 1,
               color: 'var(--nb-bone)',
               textShadow: '0 2px 12px rgba(0,0,0,0.6)',
@@ -183,19 +185,27 @@ export function Duel() {
           </div>
         </div>
 
-        {/* Two stacked EraCards with VsSeam between them.
-            Mobile-first single layout per Task 12. */}
+        {/* Two EraCards — stacked on mobile, side-by-side at ≥900px
+            (old-LEFT, new-RIGHT). The .duel-cards class flips
+            flex-direction at the desktop breakpoint via globals.css;
+            two VsSeams (one horizontal for mobile, one vertical for
+            desktop) swap visibility through .duel-seam-h / .duel-seam-v. */}
         <div
+          className="duel-cards"
           style={{
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'stretch',
-            gap: 0,
+            // `gap` intentionally omitted: mobile relies on the default
+            // (`gap: normal` → 0 in flex), while desktop receives the
+            // `clamp(16px, 3vw, 48px)` gap from the `.duel-cards` rule in
+            // globals.css. Inline `gap: 0` here would beat the desktop rule
+            // on specificity (per CLAUDE.md "clamp-first" override policy).
             minHeight: 0,
           }}
         >
-          <div style={{ display: 'flex' }}>
+          <div className="duel-card-slot" style={{ display: 'flex' }}>
             <EraCard
               fighter={fighter}
               era="old"
@@ -218,8 +228,15 @@ export function Duel() {
               style={{ flex: 1 }}
             />
           </div>
-          <VsSeam vertical />
-          <div style={{ display: 'flex' }}>
+          {/* Mobile-only seam (horizontal divider between stacked cards). */}
+          <div className="duel-seam-h">
+            <VsSeam vertical testId="vs-seam-h" />
+          </div>
+          {/* Desktop-only seam (vertical divider between side-by-side cards). */}
+          <div className="duel-seam-v">
+            <VsSeam vertical={false} testId="vs-seam-v" />
+          </div>
+          <div className="duel-card-slot" style={{ display: 'flex' }}>
             <EraCard
               fighter={fighter}
               era="new"
