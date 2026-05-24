@@ -532,7 +532,7 @@ describe('useRunStore.recordPickAndSubmit', () => {
     expect(submitVote).not.toHaveBeenCalled();
   });
 
-  it('after next(), the next step\'s first pick is treated as a first-pick (not a swap)', () => {
+  it("after next(), the next step's first pick is treated as a first-pick (not a swap)", () => {
     // Cross-step regression guard: next() must reset duelState to 'idle' so
     // the next step's first call to recordPickAndSubmit records a fresh vote.
     useRunStore.getState().start();
@@ -549,9 +549,6 @@ describe('useRunStore.recordPickAndSubmit', () => {
 
     const stepOne = useRunStore.getState();
     const fighterOne = FIGHTERS[stepOne.order[stepOne.step]];
-    // runId must stay stable across next() — it's the idempotency key for
-    // /api/complete; a fresh runId mid-run would break the per-run dedupe.
-    expect(stepOne.runId).toBe(stepZero.runId);
 
     useRunStore.getState().recordPickAndSubmit('old');
 
@@ -560,6 +557,22 @@ describe('useRunStore.recordPickAndSubmit', () => {
     expect(submitVote).toHaveBeenLastCalledWith(fighterOne.id, 'old', stepOne.runId);
     expect(useIdentityStore.getState().votedMatchups[fighterZero.id]).toBe('new');
     expect(useIdentityStore.getState().votedMatchups[fighterOne.id]).toBe('old');
+  });
+
+  it('next() preserves runId across step transitions', () => {
+    // runId is the idempotency key for /api/complete (see CLAUDE.md:
+    // "seen:<runId>" key, SET NX semantics). A fresh runId mid-run would
+    // break per-run dedupe and let a single completion increment plays
+    // twice. Focused regression guard so a future next() refactor can't
+    // silently rotate the id.
+    useRunStore.getState().start();
+    const runIdBefore = useRunStore.getState().runId;
+    expect(runIdBefore).not.toBe('');
+
+    useRunStore.getState().recordPickAndSubmit('old');
+    useRunStore.getState().next();
+
+    expect(useRunStore.getState().runId).toBe(runIdBefore);
   });
 });
 

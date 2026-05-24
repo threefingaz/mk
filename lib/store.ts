@@ -112,17 +112,24 @@ export type RunStore = RunState &
      * pure (per Task 9 contract) by routing the network call through this
      * separate action invoked from DuelScreen's pick handler.
      *
-     * Behavior:
-     *  - Reads `votedMatchups[fighter.id]` from useIdentityStore. If already
-     *    set, the matchup was submitted from an earlier session on this
-     *    browser — skip the network call (server-side rate-limit + per-IP
-     *    dedupe makes a re-submit safe, but skipping is cheaper and aligns
-     *    with the plan's Q3 contract).
-     *  - Else fires `submitVote()`; on resolve calls `markVoted()` to set
-     *    the dedupe flag so subsequent picks for the same matchup are
-     *    skipped. The submit is NOT awaited — the UI advances immediately.
-     *  - Always calls `pick(era)` so the duel transitions regardless of
-     *    network outcome (resilience layer makes failures invisible to UI).
+     * Behavior (re-pick before NEXT):
+     *  - First pick of a step (duelState === 'idle'): reads
+     *    `votedMatchups[fighter.id]` from useIdentityStore. If already set
+     *    (matchup voted on in an earlier session on this browser), skip the
+     *    network call. Else fires `submitVote()` and calls `markVoted()` to
+     *    set the per-matchup dedupe flag per CLAUDE.md's
+     *    "one-vote-per-matchup-per-browser" contract. The submit is NOT
+     *    awaited — the UI advances immediately.
+     *  - Cross-era retap before next() (e.g. picked 'old', now taps 'new'):
+     *    swaps duelState only. Does NOT call `markVoted` or `submitVote`
+     *    again — the server vote stays bound to the first pick on each
+     *    matchup. Local picks (and therefore archetype + share code)
+     *    reflect the swap.
+     *  - Same-era retap: no-op. Safety backstop for the JSX same-era guard
+     *    in Duel.tsx; covers any future caller that forgets to gate.
+     *  - All branches that reach the bottom call `pick(era)` so the duel
+     *    transitions regardless of network outcome (resilience layer makes
+     *    failures invisible to UI).
      */
     recordPickAndSubmit: (era: Era) => void;
     next: () => void;

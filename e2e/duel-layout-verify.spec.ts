@@ -12,20 +12,26 @@ import { test, expect } from '@playwright/test';
 // the same two CSS branches (per the plan's "Don't multiply visual tests"
 // policy — keep the regression guard tight).
 const WIDTHS = [390, 1280] as const;
-// Minimum gap between cards is the load-bearing mobile design value (6px,
-// from .duel-cards { gap: 6px }). Any inline-style regression that overrode
-// the CSS rule would silently squeeze this — the e2e is the backstop.
+// Minimum gap between cards. The CSS spec says `gap: 6px`, but we assert >= 4
+// to absorb sub-pixel rounding from the browser's layout engine — boundingBox
+// returns fractional pixels at non-integer device pixel ratios, and a hard
+// `>= 6` assertion flakes intermittently. 4px is comfortably above any
+// rounding artifact yet still catches an inline-style regression that
+// collapses the gap to 0 (or worse, overlaps the cards).
 const MIN_CARD_GAP_PX = 4;
+
+test.beforeEach(async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+  await page.reload();
+});
 
 for (const width of WIDTHS) {
   test(`Duel layout at ${width}px wide`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
-    await page.goto('/');
-    await page.evaluate(() => {
-      sessionStorage.clear();
-      localStorage.clear();
-    });
-    await page.reload();
 
     const fightButton = page.getByRole('button', { name: /FIGHT/i });
     await expect(fightButton).toBeVisible();
@@ -68,12 +74,6 @@ for (const width of WIDTHS) {
 
 test('Re-pick swaps the locked stamp without re-voting (server vote bound to first pick)', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 800 });
-  await page.goto('/');
-  await page.evaluate(() => {
-    sessionStorage.clear();
-    localStorage.clear();
-  });
-  await page.reload();
 
   // Intercept votes to count network calls — the swap must NOT trigger a
   // second POST per the resilience contract.

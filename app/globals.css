@@ -623,9 +623,9 @@ body {
     justify-content: center;
     /* Height cap — prevents NEXT CTA from being pushed below the fold on
        tall desktop viewports. EraCard portraits render at a 4/5 aspect
-       (~550px tall inside a 440px slot) + ~64px chrome ≈ 614px, which
-       fits inside `70vh` on a 1440x900 frame (630px) with room for the
-       action area beneath the cards. `clamp(400px, 70vh, 700px)` keeps
+       (~500px tall inside a 400px slot — 400 × 5/4 = 500) + ~64px chrome
+       ≈ 564px, which fits inside `70vh` on a 1440x900 frame (630px) with
+       room for the action area beneath the cards. `clamp(400px, 70vh, 700px)` keeps
        the stage proportional to the viewport while staying inside the
        safe band that fits chrome + CTA. The slot's `max-width: 400px`
        (below) is paired with this ceiling — bump one and you must

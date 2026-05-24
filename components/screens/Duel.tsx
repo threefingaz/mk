@@ -19,11 +19,13 @@
 //     crowdStats[fighter.id] is present, an <OldNewBar> renders between the
 //     cards and the NEXT button with the `barfill` keyframe animation.
 //
-// Layout: two EraCards. Stacked on mobile (old on top, new on bottom) with a
-// horizontal <VsSeam /> between them; at ≥900px the .duel-cards rule in
-// globals.css flips them to side-by-side (old-LEFT, new-RIGHT) with the
-// vertical-variant <VsSeam /> visible instead. See
-// docs/plans/completed/20260524-desktop-layout.md (Task 3).
+// Layout: two EraCards side-by-side at all viewports (old-LEFT, new-RIGHT).
+// Mobile baseline is `flex-direction: row` with a 6px gap — the era-split
+// background is the only divider (no central seam). At ≥900px the .duel-cards
+// rule in globals.css adds a clamp gap, slot max-width cap, and reveals the
+// vertical-variant <VsSeam /> between the two cards. Matches the original
+// design (design-reference/src/screens.jsx::DuelScreen ~L173). See
+// docs/plans/completed/20260524-duel-mobile-side-by-side.md.
 //
 // Per the design handoff, the character name lives in a screen-level anchor
 // (mono "1995 / 2026" lockup + name) above the cards, so the EraCards use
@@ -199,6 +201,22 @@ export function Duel() {
             (fills remaining vertical space inside Duel's top-level column)
             and aren't expressible from a stylesheet without coupling the
             wrapper's parent layout into globals.css. */}
+        {/* Both onPick handlers below are structurally symmetric — they differ
+            only in the era literal ('old' vs 'new'), the era-specific audio
+            sample pair, and the same-era guard condition (pickedOld vs
+            pickedNew). The two handlers are kept inline (not extracted) for
+            grep-ability of the audio sample calls and to keep each card's
+            interaction surface self-contained.
+
+            Same-era retap short-circuits here for UX (no audio jitter, no
+            second analytics event). The store also short-circuits as a
+            correctness backstop — including against a bounce-tap race where
+            two taps queue in one React event flush, since these closures read
+            the snapshot at render time and can miss an in-flight pick. The
+            store's fresh useRunStore.getState() re-read covers that case.
+
+            Audio: unlockAudio + impact + voice are fire-and-forget. Missing
+            samples are silent per CLAUDE.md's "Drop assets in later" pattern. */}
         <div
           className="duel-cards"
           style={{
@@ -212,13 +230,6 @@ export function Duel() {
               era="old"
               picked={pickedOld}
               dimmed={pickedNew}
-              // Same-era retap short-circuits here for UX (no audio jitter,
-              // no second analytics event). The store also short-circuits
-              // as a correctness backstop — including against a bounce-tap
-              // race where two taps queue in one React event flush, since
-              // this closure reads the snapshot at render time and can miss
-              // an in-flight pick. The store's fresh useRunStore.getState()
-              // re-read covers that case.
               onPick={() => {
                 if (pickedOld) return;
                 trackEvent({ name: 'pick', props: { fighter_id: fighter.id, era: 'old', step } });
