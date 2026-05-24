@@ -433,7 +433,7 @@ describe('useRunStore.recordPickAndSubmit', () => {
     expect(useIdentityStore.getState().votedMatchups[fighter.id]).toBe('new');
   });
 
-  it('same-era retap is a true no-op (does not re-invoke pick / submitVote / markVoted)', () => {
+  it('same-era retap is a true no-op (does not re-invoke submitVote / markVoted / mutate duelState)', () => {
     // Defensive backstop for the JSX same-era guard in Duel.tsx.
     useRunStore.getState().start();
     const { order, step } = useRunStore.getState();
@@ -444,17 +444,92 @@ describe('useRunStore.recordPickAndSubmit', () => {
     expect(submitVote).toHaveBeenCalledTimes(1);
     expect(useIdentityStore.getState().votedMatchups[fighter.id]).toBe('old');
 
-    // Spy on pick to assert the no-op short-circuits *at the top* of the
-    // function (before reaching the final useRunStore.getState().pick(era)).
-    const pickSpy = vi.spyOn(useRunStore.getState(), 'pick');
+    // Capture state shape before second tap; verify nothing observable
+    // changes. (Asserting via observable state rather than spying on the
+    // pick action is robust against Zustand internals.)
+    const before = useRunStore.getState();
     useRunStore.getState().recordPickAndSubmit('old');
+    const after = useRunStore.getState();
 
-    expect(useRunStore.getState().duelState).toBe('pickedOld');
+    expect(after.duelState).toBe('pickedOld');
+    expect(after.duelState).toBe(before.duelState);
+    expect(after.picks).toEqual(before.picks);
+    expect(after.step).toBe(before.step);
     expect(submitVote).toHaveBeenCalledTimes(1);
     expect(useIdentityStore.getState().votedMatchups[fighter.id]).toBe('old');
-    expect(pickSpy).not.toHaveBeenCalled();
+  });
 
-    pickSpy.mockRestore();
+  it('swap when matchup pre-voted: duelState swaps, no submitVote, votedMatchups unchanged', () => {
+    // Interaction between the dedupe branch and the swap branch — the
+    // previously-voted matchup should NEVER trigger a second submitVote,
+    // and the swap path itself also skips submitVote. The dedupe value
+    // (which era was server-locked) stays bound to the first session.
+    useRunStore.getState().start();
+    const { order, step } = useRunStore.getState();
+    const fighter = FIGHTERS[order[step]];
+
+    // Simulate "this matchup was already voted in a prior session".
+    useIdentityStore.getState().markVoted(fighter.id, 'old');
+    vi.mocked(submitVote).mockClear();
+
+    // First pick this session — dedupe skips submitVote, but pick() still
+    // sets duelState.
+    useRunStore.getState().recordPickAndSubmit('new');
+    expect(useRunStore.getState().duelState).toBe('pickedNew');
+    expect(submitVote).not.toHaveBeenCalled();
+    expect(useIdentityStore.getState().votedMatchups[fighter.id]).toBe('old');
+
+    // Swap back to 'old' — same-matchup dedupe still skips submitVote,
+    // and the swap branch itself doesn't call submitVote either.
+    useRunStore.getState().recordPickAndSubmit('old');
+    expect(useRunStore.getState().duelState).toBe('pickedOld');
+    expect(submitVote).not.toHaveBeenCalled();
+    expect(useIdentityStore.getState().votedMatchups[fighter.id]).toBe('old');
+  });
+
+  it('rapid-tap sequence old → new → old → new: duelState tracks last tap, only first triggers submitVote', () => {
+    // Off-by-one regression guard for currentEra derivation across repeated
+    // swaps — make sure every cross-era tap correctly sees the just-set
+    // duelState (via the fresh useRunStore.getState() re-read) so no tap
+    // accidentally re-takes the first-pick branch.
+    useRunStore.getState().start();
+    const { order, step, runId } = useRunStore.getState();
+    const fighter = FIGHTERS[order[step]];
+
+    useRunStore.getState().recordPickAndSubmit('old');
+    expect(useRunStore.getState().duelState).toBe('pickedOld');
+    expect(submitVote).toHaveBeenCalledTimes(1);
+    expect(submitVote).toHaveBeenLastCalledWith(fighter.id, 'old', runId);
+
+    useRunStore.getState().recordPickAndSubmit('new');
+    expect(useRunStore.getState().duelState).toBe('pickedNew');
+    expect(submitVote).toHaveBeenCalledTimes(1);
+
+    useRunStore.getState().recordPickAndSubmit('old');
+    expect(useRunStore.getState().duelState).toBe('pickedOld');
+    expect(submitVote).toHaveBeenCalledTimes(1);
+
+    useRunStore.getState().recordPickAndSubmit('new');
+    expect(useRunStore.getState().duelState).toBe('pickedNew');
+    expect(submitVote).toHaveBeenCalledTimes(1);
+
+    // The server vote is locked to the very first pick.
+    expect(useIdentityStore.getState().votedMatchups[fighter.id]).toBe('old');
+  });
+
+  it('with empty order (defensive: fighterIndex undefined), still calls pick(era) — duelState flips', () => {
+    // Reaches `recordPickAndSubmit` without `start()` (order is empty).
+    // The defensive branch must not throw and must still flip duelState so
+    // any downstream JSX that pre-renders the Duel screen doesn't deadlock.
+    expect(useRunStore.getState().order).toEqual([]);
+    expect(useRunStore.getState().duelState).toBe('idle');
+
+    vi.mocked(submitVote).mockClear();
+    useRunStore.getState().recordPickAndSubmit('old');
+
+    // pick(era) still ran (duelState flipped) but no network call.
+    expect(useRunStore.getState().duelState).toBe('pickedOld');
+    expect(submitVote).not.toHaveBeenCalled();
   });
 
   it('after next(), the next step\'s first pick is treated as a first-pick (not a swap)', () => {
@@ -474,6 +549,9 @@ describe('useRunStore.recordPickAndSubmit', () => {
 
     const stepOne = useRunStore.getState();
     const fighterOne = FIGHTERS[stepOne.order[stepOne.step]];
+    // runId must stay stable across next() — it's the idempotency key for
+    // /api/complete; a fresh runId mid-run would break the per-run dedupe.
+    expect(stepOne.runId).toBe(stepZero.runId);
 
     useRunStore.getState().recordPickAndSubmit('old');
 

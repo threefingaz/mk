@@ -601,8 +601,13 @@ body {
   flex: 1;
   min-width: 0;
 }
-.duel-seam-h { display: none; }   /* never shown — era-split divides */
-.duel-seam-v { display: none; }   /* desktop only */
+/* Both seam wrappers are rendered by Duel.tsx so getByTestId('vs-seam-h')
+   and getByTestId('vs-seam-v') resolve in tests. Visibility is CSS-only:
+   `.duel-seam-h` is hidden at every viewport (era-split background is the
+   only divider on mobile; there is no central seam to draw); `.duel-seam-v`
+   appears at >=900px between the two side-by-side cards. */
+.duel-seam-h { display: none; }
+.duel-seam-v { display: none; }   /* desktop only — toggled at >=900px below */
 
 @media (min-width: 900px) {
   /* Desktop layout — keeps the flex-row shape but adds gap clamp,

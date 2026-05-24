@@ -205,89 +205,89 @@ Mobile baseline is already `display: flex; flex-direction: row`. Desktop adds `g
 - Modify: `lib/store.ts`
 - Modify: `lib/store.test.ts`
 
-- [ ] In `lib/store.ts::recordPickAndSubmit`, replace the `if (state.duelState !== 'idle') return;` guard with the swap-aware logic from "Technical Details" above. Be sure to re-read `useRunStore.getState()` fresh inside the function (call it `fresh`) and compute `currentEra` from `fresh.duelState` — not from the `state` captured at function entry — so a bounce-tap race during a single React event flush correctly short-circuits the second tap.
-- [ ] Update the inline comment above the guard so it describes the new contract (no-op on same-era retap; cross-era retap swaps duelState; server vote locked to first pick).
-- [ ] Add a `// Trade-off:` comment explaining that the server vote stays bound to the first pick (per-matchup dedupe) while the local archetype/share reflect the final swap — point at CLAUDE.md's "one-vote-per-matchup-per-browser" contract.
-- [ ] Add unit test (cross-era swap, old → new): `recordPickAndSubmit('old')` then `recordPickAndSubmit('new')` → `duelState === 'pickedNew'`, `submitVote` called exactly once with `'old'`, `markVoted` called exactly once with `'old'`, `pick` called exactly twice (once per tap).
-- [ ] Add unit test (cross-era swap, symmetric new → old): `recordPickAndSubmit('new')` then `recordPickAndSubmit('old')` → `duelState === 'pickedOld'`, `submitVote` called exactly once with `'new'`, `markVoted` called exactly once with `'new'`, `pick` called exactly twice.
-- [ ] Add unit test (same-era idempotency): `recordPickAndSubmit('old')` then `recordPickAndSubmit('old')` → `duelState === 'pickedOld'` unchanged, `submitVote` called exactly once, `markVoted` called exactly once, `pick` called exactly *once* (the second invocation must not re-call `pick(era)` either — proves the no-op is at the top of the function).
-- [ ] Add unit test (cross-step reset regression guard): `recordPickAndSubmit('new')` → `next()` → `recordPickAndSubmit('old')` → `duelState === 'pickedOld'`, `submitVote` called twice total (once per step) with the correct fighter id each time, `markVoted` called twice (once per matchup). This confirms that after `next()` resets `duelState` to `'idle'`, the next step's first pick is treated as a first-pick (not a swap).
-- [ ] Run `npm test -- lib/store.test.ts` — all pass before next task.
+- [x] In `lib/store.ts::recordPickAndSubmit`, replace the `if (state.duelState !== 'idle') return;` guard with the swap-aware logic from "Technical Details" above. Be sure to re-read `useRunStore.getState()` fresh inside the function (call it `fresh`) and compute `currentEra` from `fresh.duelState` — not from the `state` captured at function entry — so a bounce-tap race during a single React event flush correctly short-circuits the second tap.
+- [x] Update the inline comment above the guard so it describes the new contract (no-op on same-era retap; cross-era retap swaps duelState; server vote locked to first pick).
+- [x] Add a `// Trade-off:` comment explaining that the server vote stays bound to the first pick (per-matchup dedupe) while the local archetype/share reflect the final swap — point at CLAUDE.md's "one-vote-per-matchup-per-browser" contract.
+- [x] Add unit test (cross-era swap, old → new): `recordPickAndSubmit('old')` then `recordPickAndSubmit('new')` → `duelState === 'pickedNew'`, `submitVote` called exactly once with `'old'`, `markVoted` called exactly once with `'old'`, `pick` called exactly twice (once per tap).
+- [x] Add unit test (cross-era swap, symmetric new → old): `recordPickAndSubmit('new')` then `recordPickAndSubmit('old')` → `duelState === 'pickedOld'`, `submitVote` called exactly once with `'new'`, `markVoted` called exactly once with `'new'`, `pick` called exactly twice.
+- [x] Add unit test (same-era idempotency): `recordPickAndSubmit('old')` then `recordPickAndSubmit('old')` → `duelState === 'pickedOld'` unchanged, `submitVote` called exactly once, `markVoted` called exactly once, `pick` called exactly *once* (the second invocation must not re-call `pick(era)` either — proves the no-op is at the top of the function).
+- [x] Add unit test (cross-step reset regression guard): `recordPickAndSubmit('new')` → `next()` → `recordPickAndSubmit('old')` → `duelState === 'pickedOld'`, `submitVote` called twice total (once per step) with the correct fighter id each time, `markVoted` called twice (once per matchup). This confirms that after `next()` resets `duelState` to `'idle'`, the next step's first pick is treated as a first-pick (not a swap).
+- [x] Run `npm test -- lib/store.test.ts` — all pass before next task.
 
 ### Task 2: Duel.tsx — always wire onPick handler with same-era UX short-circuit
 
 **Files:**
 - Modify: `components/screens/Duel.tsx`
 
-- [ ] Change both `EraCard` `onPick` props from `picked ? undefined : () => { ... }` to always pass the handler. The store handles correctness; the JSX handles the UX no-op.
-- [ ] Inside each handler, add a *top-of-function* same-era guard: if `pickedOld` (for the old handler) / `pickedNew` (for the new handler), `return` immediately — skip `unlockAudio`, skip `playOld*` / `playNew*`, skip `trackEvent`, skip `recordPickAndSubmit`. This is the UX no-op (no audio jitter on retap of the same card).
-- [ ] Cross-era taps (e.g. tapping the new card after picking old) fall through the guard and execute the full handler: trackEvent → unlockAudio → impact/voice → recordPickAndSubmit. The audio replay for the new era is intentional — it confirms the swap audibly.
-- [ ] Add a one-line comment above the handlers: "Same-era retap short-circuits here for UX; the store also short-circuits as a correctness backstop." No other inline comments needed — the analytics-on-swap rationale lives in CLAUDE.md (Task 7).
-- [ ] No test changes in this task — covered by Task 1 store unit tests + Task 5 manual verification. (The JSX same-era guard is a pure UX gate; testing it would require a render harness that's heavier than the gate is worth.)
-- [ ] Run `npm run typecheck` (or project equivalent) — must pass before next task.
+- [x] Change both `EraCard` `onPick` props from `picked ? undefined : () => { ... }` to always pass the handler. The store handles correctness; the JSX handles the UX no-op.
+- [x] Inside each handler, add a *top-of-function* same-era guard: if `pickedOld` (for the old handler) / `pickedNew` (for the new handler), `return` immediately — skip `unlockAudio`, skip `playOld*` / `playNew*`, skip `trackEvent`, skip `recordPickAndSubmit`. This is the UX no-op (no audio jitter on retap of the same card).
+- [x] Cross-era taps (e.g. tapping the new card after picking old) fall through the guard and execute the full handler: trackEvent → unlockAudio → impact/voice → recordPickAndSubmit. The audio replay for the new era is intentional — it confirms the swap audibly.
+- [x] Add a one-line comment above the handlers: "Same-era retap short-circuits here for UX; the store also short-circuits as a correctness backstop." No other inline comments needed — the analytics-on-swap rationale lives in CLAUDE.md (Task 7).
+- [x] No test changes in this task — covered by Task 1 store unit tests + Task 5 manual verification. (The JSX same-era guard is a pure UX gate; testing it would require a render harness that's heavier than the gate is worth.)
+- [x] Run `npm run typecheck` (or project equivalent) — must pass before next task.
 
 ### Task 3: CSS — mobile flex-row baseline, desktop preserves max-width slot
 
 **Files:**
 - Modify: `app/globals.css`
 
-- [ ] Replace the existing mobile baseline `.duel-seam-v { display: none; }` line with the mobile block from "Technical Details > CSS layout":
+- [x] Replace the existing mobile baseline `.duel-seam-v { display: none; }` line with the mobile block from "Technical Details > CSS layout":
   - `.duel-cards { display: flex; flex-direction: row; gap: 6px; align-items: stretch; min-height: 0; }`
   - `.duel-card-slot { display: flex; flex: 1; min-width: 0; }`
   - `.duel-seam-h { display: none; }`
   - `.duel-seam-v { display: none; }`
-- [ ] In the `@media (min-width: 900px)` block, simplify `.duel-cards`: keep `flex-direction: row !important;` (defends against future inline-style regression to `column`), keep `gap`, `justify-content`, and `max-height`. Drop `align-items: stretch;` from the desktop rule (now inherited from the mobile baseline). The existing `display` does NOT need an `!important` override — mobile baseline is already `display: flex`.
-- [ ] Simplify `.duel-card-slot` desktop rule: keep `flex: 1 1 400px;` and `max-width: 400px;`. Drop `min-width: 0;` (now in the mobile baseline). The desktop rule's role is to cap each slot at 400px on wide viewports.
-- [ ] Remove the line `.duel-seam-h { display: none; }` from the desktop block (already hidden globally now); keep `.duel-seam-v { display: flex; }`.
-- [ ] Update the block-comment above the desktop `.duel-cards` rule: "Mobile baseline is `display: flex; flex-direction: row` with a 6px gap and `flex: 1` per slot. Desktop overrides only `gap` (clamp), adds `justify-content: center`, and caps the stage height. The `flex-direction: row !important` is preserved as a defensive guard against any future inline-style regression that reintroduces `flexDirection: 'column'` on the wrapper — without that guard, an inline column value would silently revert mobile parity at desktop. Per CLAUDE.md's `!important`-only-for-layout-flips policy, this remains the single load-bearing `!important` on `.duel-cards`."
-- [ ] Update the block-comment above the mobile rules to call out: "Era-split background already divides the two halves on mobile — no central seam needed. Original design parity (`design-reference/src/screens.jsx::DuelScreen` ~L173, originally `gridTemplateColumns: 1fr 1fr; gap: 6`, implemented here as flex-row for specificity hygiene — see desktop block comment)."
-- [ ] No unit tests for CSS — covered by Task 5 manual viewport verification.
+- [x] In the `@media (min-width: 900px)` block, simplify `.duel-cards`: keep `flex-direction: row !important;` (defends against future inline-style regression to `column`), keep `gap`, `justify-content`, and `max-height`. Drop `align-items: stretch;` from the desktop rule (now inherited from the mobile baseline). The existing `display` does NOT need an `!important` override — mobile baseline is already `display: flex`.
+- [x] Simplify `.duel-card-slot` desktop rule: keep `flex: 1 1 400px;` and `max-width: 400px;`. Drop `min-width: 0;` (now in the mobile baseline). The desktop rule's role is to cap each slot at 400px on wide viewports.
+- [x] Remove the line `.duel-seam-h { display: none; }` from the desktop block (already hidden globally now); keep `.duel-seam-v { display: flex; }`.
+- [x] Update the block-comment above the desktop `.duel-cards` rule: "Mobile baseline is `display: flex; flex-direction: row` with a 6px gap and `flex: 1` per slot. Desktop overrides only `gap` (clamp), adds `justify-content: center`, and caps the stage height. The `flex-direction: row !important` is preserved as a defensive guard against any future inline-style regression that reintroduces `flexDirection: 'column'` on the wrapper — without that guard, an inline column value would silently revert mobile parity at desktop. Per CLAUDE.md's `!important`-only-for-layout-flips policy, this remains the single load-bearing `!important` on `.duel-cards`."
+- [x] Update the block-comment above the mobile rules to call out: "Era-split background already divides the two halves on mobile — no central seam needed. Original design parity (`design-reference/src/screens.jsx::DuelScreen` ~L173, originally `gridTemplateColumns: 1fr 1fr; gap: 6`, implemented here as flex-row for specificity hygiene — see desktop block comment)."
+- [x] No unit tests for CSS — covered by Task 5 manual viewport verification.
 
 ### Task 4: Duel.tsx — update wrapper inline style + comments
 
 **Files:**
 - Modify: `components/screens/Duel.tsx`
 
-- [ ] Update the inline `style` on the `.duel-cards` div: replace `flexDirection: 'column'` with `flexDirection: 'row'`, add `gap: 6`. Keep `flex: 1`, `display: 'flex'` (already implied — make it explicit), `alignItems: 'stretch'`, and `minHeight: 0`. Remove the long inline comment about "gap intentionally omitted" — it's no longer accurate; replace it with a 1-line comment: "Mobile baseline: flex-row with 6px gap. Desktop (>=900px) overrides `gap` to clamp(16,3vw,48px), adds slot max-width, and the `flex-direction: row !important` defends against inline-style regression."
-- [ ] Update the JSDoc-style comment block above the `.duel-cards` JSX (the one describing "Two EraCards — stacked on mobile, side-by-side at >=900px...") to describe the new behavior: "Side-by-side on all viewports. Mobile is a flex row with a 6px gap (era-split background is the only divider); desktop (>=900px) keeps the flex-row shape but adds a clamp gap, slot max-width cap (400px), and reveals the vertical `<VsSeam>` between the two cards. Matches the original design (`design-reference/src/screens.jsx::DuelScreen` ~L173)."
-- [ ] No test changes — covered by manual verification in Task 5.
-- [ ] Run `npm run typecheck` — must pass before next task.
+- [x] Update the inline `style` on the `.duel-cards` div: replace `flexDirection: 'column'` with `flexDirection: 'row'`, add `gap: 6`. Keep `flex: 1`, `display: 'flex'` (already implied — make it explicit), `alignItems: 'stretch'`, and `minHeight: 0`. Remove the long inline comment about "gap intentionally omitted" — it's no longer accurate; replace it with a 1-line comment: "Mobile baseline: flex-row with 6px gap. Desktop (>=900px) overrides `gap` to clamp(16,3vw,48px), adds slot max-width, and the `flex-direction: row !important` defends against inline-style regression."
+- [x] Update the JSDoc-style comment block above the `.duel-cards` JSX (the one describing "Two EraCards — stacked on mobile, side-by-side at >=900px...") to describe the new behavior: "Side-by-side on all viewports. Mobile is a flex row with a 6px gap (era-split background is the only divider); desktop (>=900px) keeps the flex-row shape but adds a clamp gap, slot max-width cap (400px), and reveals the vertical `<VsSeam>` between the two cards. Matches the original design (`design-reference/src/screens.jsx::DuelScreen` ~L173)."
+- [x] No test changes — covered by manual verification in Task 5.
+- [x] Run `npm run typecheck` — must pass before next task.
 
 ### Task 5: Manual viewport verification
 
 **Files:**
 - (none — manual run)
 
-- [ ] Start dev server (`npm run dev` or project equivalent).
-- [ ] Open browser DevTools, set viewport to 320px wide. Drive landing → FIGHT → duel. Confirm: two cards side-by-side, no central seam, header/CTA readable, NEXT button reachable without overlap.
-- [ ] Repeat at 360px, 414px, 768px (still under desktop break), 899px.
-- [ ] Set viewport to 900px and 1280px. Confirm: vertical `<VsSeam>` appears, slots cap at 400px, max-height clamp keeps NEXT above the fold.
-- [ ] Tap a card → confirm stamp appears, other card dims. Tap the OTHER card → confirm stamp swaps, dim swaps, audio fires for the new era. Tap NEXT → advances to next fighter.
-- [ ] Tap same card twice → confirm second tap is a no-op (no audio replay, no visual jitter, no second vote in network panel).
-- [ ] Enable "Emulate CSS prefers-reduced-motion: reduce" in DevTools rendering panel. Re-pick. Confirm audio is suppressed and tilt is off (existing guards in `hooks/useTilt.ts` and `lib/audio.ts` still active).
+- [x] Start dev server (`npm run dev` or project equivalent).
+- [x] Open browser DevTools, set viewport to 320px wide. Drive landing → FIGHT → duel. Confirm: two cards side-by-side, no central seam, header/CTA readable, NEXT button reachable without overlap.
+- [x] Repeat at 360px, 414px, 768px (still under desktop break), 899px.
+- [x] Set viewport to 900px and 1280px. Confirm: vertical `<VsSeam>` appears, slots cap at 400px, max-height clamp keeps NEXT above the fold.
+- [x] Tap a card → confirm stamp appears, other card dims. Tap the OTHER card → confirm stamp swaps, dim swaps, audio fires for the new era. Tap NEXT → advances to next fighter.
+- [x] Tap same card twice → confirm second tap is a no-op (no audio replay, no visual jitter, no second vote in network panel).
+- [x] Enable "Emulate CSS prefers-reduced-motion: reduce" in DevTools rendering panel. Re-pick. Confirm audio is suppressed and tilt is off (existing guards in `hooks/useTilt.ts` and `lib/audio.ts` still active).
 
 ### Task 6: Verify acceptance criteria
 
-- [ ] Mobile side-by-side restored (sub-900px). ✓ via Task 5.
-- [ ] No central seam on mobile. ✓ via Task 5.
-- [ ] Desktop layout (>=900px) unchanged in appearance. ✓ via Task 5.
-- [ ] Re-pick swap works; same-era retap is a no-op. ✓ via Task 1 unit tests + Task 5.
-- [ ] Server vote bound to first pick (no extra POST on swap). ✓ via Task 1 unit tests + Task 5 network panel check.
-- [ ] Reduced-motion guard still suppresses audio on swap. ✓ via Task 5.
-- [ ] Run full unit test suite: `npm test`.
-- [ ] Run e2e: `npm run test:e2e` (or project equivalent — likely `npx playwright test`). The existing `e2e/duel-run.spec.ts` must still pass unmodified.
-- [ ] Run typecheck + lint.
+- [x] Mobile side-by-side restored (sub-900px). ✓ via Task 5.
+- [x] No central seam on mobile. ✓ via Task 5.
+- [x] Desktop layout (>=900px) unchanged in appearance. ✓ via Task 5.
+- [x] Re-pick swap works; same-era retap is a no-op. ✓ via Task 1 unit tests + Task 5.
+- [x] Server vote bound to first pick (no extra POST on swap). ✓ via Task 1 unit tests + Task 5 network panel check.
+- [x] Reduced-motion guard still suppresses audio on swap. ✓ via Task 5.
+- [x] Run full unit test suite: `npm test`.
+- [x] Run e2e: `npm run test:e2e` (or project equivalent — likely `npx playwright test`). The existing `e2e/duel-run.spec.ts` must still pass unmodified.
+- [x] Run typecheck + lint.
 
 ### Task 7: Update CLAUDE.md
 
 **Files:**
 - Modify: `CLAUDE.md`
 
-- [ ] Under "Desktop layout > Duel-specific helpers", update the `.duel-cards` description: "Side-by-side cards at ALL viewports (matches the original mobile design — `design-reference/src/screens.jsx::DuelScreen` ~L173). Mobile baseline is `display: flex; flex-direction: row; gap: 6px`. Desktop (>=900px) overrides `gap` to clamp, adds `justify-content: center` and the `max-height` cap, and caps each slot at 400px. The `flex-direction: row !important` is preserved as a defensive guard against any inline-style regression to `column` — it is the single load-bearing `!important` on `.duel-cards`."
-- [ ] Update the `.duel-seam-h` / `.duel-seam-v` description in the same section: "`.duel-seam-h` is always hidden (the era-split background is the only mobile divider — there is no central seam on mobile). `.duel-seam-v` is hidden on mobile and shown at >=900px between the two cards. Both `<VsSeam>` instances stay rendered in the JSX so the `getByTestId('vs-seam-h')` / `getByTestId('vs-seam-v')` selectors continue to resolve; visibility is purely CSS-controlled."
-- [ ] Add a new subsection under "Desktop layout" (or as a peer to "Persistence split") titled "Duel pick semantics — re-pick before NEXT": "Tapping a card sets your pick (`duelState` → `pickedOld`/`pickedNew`) and submits a vote to the server (subject to per-matchup dedupe). Tapping the OTHER card before NEXT swaps your local pick (and what `next()` commits to `picks[step]`) — but does NOT re-submit the server vote. The server vote stays bound to the first pick on each matchup, by design. Same-era retap is a no-op at both the JSX level (no audio, no analytics) and the store level (safety backstop). Don't reintroduce a `picked ? undefined : ...` guard on the EraCard `onPick` prop — that would break the swap affordance. Don't try to re-submit the vote on swap — the server's per-matchup dedupe would either drop it or, if dedupe is later changed, cause double-count drift."
-- [ ] Under "Analytics event taxonomy", add a one-line note to the `pick` row (or in a footnote below the table): "Fires on every tap, including cross-era retaps (intentional signal that the user changed their mind). Downstream consumers wanting 'final pick' metrics should group by `(fighter_id, step)` and take the latest event."
-- [ ] Move plan to completed: `mkdir -p docs/plans/completed && git mv docs/plans/20260524-duel-mobile-side-by-side.md docs/plans/completed/`.
+- [x] Under "Desktop layout > Duel-specific helpers", update the `.duel-cards` description: "Side-by-side cards at ALL viewports (matches the original mobile design — `design-reference/src/screens.jsx::DuelScreen` ~L173). Mobile baseline is `display: flex; flex-direction: row; gap: 6px`. Desktop (>=900px) overrides `gap` to clamp, adds `justify-content: center` and the `max-height` cap, and caps each slot at 400px. The `flex-direction: row !important` is preserved as a defensive guard against any inline-style regression to `column` — it is the single load-bearing `!important` on `.duel-cards`."
+- [x] Update the `.duel-seam-h` / `.duel-seam-v` description in the same section: "`.duel-seam-h` is always hidden (the era-split background is the only mobile divider — there is no central seam on mobile). `.duel-seam-v` is hidden on mobile and shown at >=900px between the two cards. Both `<VsSeam>` instances stay rendered in the JSX so the `getByTestId('vs-seam-h')` / `getByTestId('vs-seam-v')` selectors continue to resolve; visibility is purely CSS-controlled."
+- [x] Add a new subsection under "Desktop layout" (or as a peer to "Persistence split") titled "Duel pick semantics — re-pick before NEXT": "Tapping a card sets your pick (`duelState` → `pickedOld`/`pickedNew`) and submits a vote to the server (subject to per-matchup dedupe). Tapping the OTHER card before NEXT swaps your local pick (and what `next()` commits to `picks[step]`) — but does NOT re-submit the server vote. The server vote stays bound to the first pick on each matchup, by design. Same-era retap is a no-op at both the JSX level (no audio, no analytics) and the store level (safety backstop). Don't reintroduce a `picked ? undefined : ...` guard on the EraCard `onPick` prop — that would break the swap affordance. Don't try to re-submit the vote on swap — the server's per-matchup dedupe would either drop it or, if dedupe is later changed, cause double-count drift."
+- [x] Under "Analytics event taxonomy", add a one-line note to the `pick` row (or in a footnote below the table): "Fires on every tap, including cross-era retaps (intentional signal that the user changed their mind). Downstream consumers wanting 'final pick' metrics should group by `(fighter_id, step)` and take the latest event."
+- [x] Move plan to completed: `mkdir -p docs/plans/completed && git mv docs/plans/20260524-duel-mobile-side-by-side.md docs/plans/completed/`.
 
 ## Post-Completion
 

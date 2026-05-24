@@ -8,7 +8,7 @@ An unofficial Mortal Kombat fan poll — vote on the 1995 vs 2026 cast, get a ve
 
 ## What it is
 
-Players play 9 head-to-head "which is better?" duels between the 1995 Mortal Kombat cast and the 2026 reboot cast, then receive a shareable verdict card. Aggregate crowd stats unlock once enough sessions have completed (`REVEAL_AT` plays).
+Players play 9 head-to-head "which is better?" duels between the 1995 Mortal Kombat cast and the 2026 reboot cast, then receive a shareable verdict card. Tap a card to lock in a pick; tap the other card before NEXT to swap. Aggregate crowd stats unlock once enough sessions have completed (`REVEAL_AT` plays).
 
 ## Setup
 
@@ -45,8 +45,8 @@ See `.env.local.example`. All are optional for local dev:
 
 Mobile-first design with a single layout-flip breakpoint at `min-width: 900px`:
 
-- **<900px (mobile / tablet portrait)**: stacked layout — the Duel renders two `EraCard`s top/bottom with a horizontal `VS` seam between them.
-- **>=900px (desktop / tablet landscape)**: side-by-side layout — Duel cards reflow to a row with a vertical `VS` seam, each card capped at 400px wide. Long-form screens (Verdict, Share, UnlockMoment, ReturningVisitor, `/r/[code]`) use a centered reading column capped via the `.content-column` helper. Typography and spacing scale via `clamp()` so everything tunes itself between the two breakpoints.
+- **<900px (mobile / tablet portrait)**: Duel renders two `EraCard`s side-by-side, divided only by the era-split background (no central seam). Long-form screens stack vertically.
+- **>=900px (desktop / tablet landscape)**: Duel cards keep the side-by-side shape but gain a vertical `VS` seam between them and cap each slot at 400px wide. Long-form screens (Verdict, Share, UnlockMoment, ReturningVisitor, `/r/[code]`) use a centered reading column capped via the `.content-column` helper. Typography and spacing scale via `clamp()` so everything tunes itself between the two breakpoints.
 
 Era invariants (the visual split between `[data-era="old"]` and `[data-era="new"]`) apply at every viewport — the desktop layer never harmonizes them. `MuteToggle` is `position: fixed` and anchors to the viewport corner at all sizes; `DisclaimerRibbon` renders inline at the bottom of the page in normal flow (full-width since Task 1 lifted the page-frame cap) — it's not viewport-pinned.
 

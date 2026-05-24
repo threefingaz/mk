@@ -13,4 +13,3 @@ next-env.d.ts
 /playwright-report
 /test-results
 /.playwright
-/e2e/.screenshots

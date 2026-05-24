@@ -270,8 +270,10 @@ export function EraCard({
       type="button"
       className={classNames}
       onClick={onPick}
-      // When the card has no click handler (post-pick reveal state), drop it
-      // out of the tab order so keyboard users don't focus a no-op control.
+      // When the card has no click handler, drop it out of the tab order so
+      // keyboard users don't focus a no-op control. Duel.tsx always passes a
+      // handler today (the re-pick swap affordance keeps the picked card
+      // interactive), but other callers may render decorative-only cards.
       // tabIndex=-1 rather than `disabled` so layout/auto-styling stays
       // identical to interactive cards (the design treats "picked" + "dimmed"
       // as a render state, not a button-disabled state).

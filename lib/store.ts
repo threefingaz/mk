@@ -200,6 +200,11 @@ export const useRunStore = create<RunStore>()(
         const { order, step, runId } = fresh;
         const fighterIndex = order[step];
         if (fighterIndex === undefined) {
+          // Defensive: start() always populates `order` before phase flips to
+          // 'duel', so this is only reachable in unit tests or if a caller
+          // skips start(). Flip duelState anyway so the screen doesn't
+          // deadlock on a stuck 'idle' state; skip the network call (no
+          // fighter to reference in the vote payload).
           useRunStore.getState().pick(era);
           return;
         }

@@ -186,37 +186,39 @@ export function Duel() {
         </div>
 
         {/* Two EraCards — side-by-side on all viewports (old-LEFT,
-            new-RIGHT). Mobile is a flex row with a 6px gap (era-split
-            background is the only divider); desktop (≥900px) keeps the
-            flex-row shape but adds a clamp gap, slot max-width cap (400px),
-            and reveals the vertical <VsSeam> between the two cards. Matches
-            the original design (design-reference/src/screens.jsx::DuelScreen
-            ~L173). Both <VsSeam> instances stay rendered so testIds resolve;
-            visibility is CSS-controlled via .duel-seam-h / .duel-seam-v. */}
+            new-RIGHT). Matches the original design
+            (design-reference/src/screens.jsx::DuelScreen ~L173). Both
+            <VsSeam> instances stay rendered so testIds resolve; visibility
+            is CSS-controlled via .duel-seam-h / .duel-seam-v.
+
+            Display/flex/gap/min-width all live in .duel-cards / .duel-card-slot
+            in app/globals.css so the desktop @media block (gap: clamp(...),
+            max-height, slot caps) can override without losing to inline-style
+            specificity. The two inline props below (flex: 1, minHeight: 0)
+            are flex-*item* declarations against the outer column flex parent
+            (fills remaining vertical space inside Duel's top-level column)
+            and aren't expressible from a stylesheet without coupling the
+            wrapper's parent layout into globals.css. */}
         <div
           className="duel-cards"
           style={{
             flex: 1,
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'stretch',
-            gap: 6,
-            // Mobile baseline: flex-row with 6px gap. Desktop (≥900px)
-            // overrides `gap` to clamp(16,3vw,48px); the `flex-direction: row
-            // !important` in globals.css defends against any inline-style
-            // regression that reintroduces `flexDirection: 'column'` here.
             minHeight: 0,
           }}
         >
-          <div className="duel-card-slot" style={{ display: 'flex' }}>
+          <div className="duel-card-slot">
             <EraCard
               fighter={fighter}
               era="old"
               picked={pickedOld}
               dimmed={pickedNew}
               // Same-era retap short-circuits here for UX (no audio jitter,
-              // no second analytics event); the store also short-circuits as
-              // a correctness backstop. Cross-era taps fall through and swap.
+              // no second analytics event). The store also short-circuits
+              // as a correctness backstop — including against a bounce-tap
+              // race where two taps queue in one React event flush, since
+              // this closure reads the snapshot at render time and can miss
+              // an in-flight pick. The store's fresh useRunStore.getState()
+              // re-read covers that case.
               onPick={() => {
                 if (pickedOld) return;
                 trackEvent({ name: 'pick', props: { fighter_id: fighter.id, era: 'old', step } });
@@ -229,15 +231,17 @@ export function Duel() {
               style={{ flex: 1 }}
             />
           </div>
-          {/* Mobile-only seam (horizontal divider between stacked cards). */}
+          {/* Both seam wrappers stay rendered so the testIds resolve; the
+              CSS rules in app/globals.css drive visibility (.duel-seam-h
+              is always hidden — era-split background divides the two
+              halves on mobile; .duel-seam-v shows at ≥900px). */}
           <div className="duel-seam-h">
             <VsSeam vertical testId="vs-seam-h" />
           </div>
-          {/* Desktop-only seam (vertical divider between side-by-side cards). */}
           <div className="duel-seam-v">
             <VsSeam vertical={false} testId="vs-seam-v" />
           </div>
-          <div className="duel-card-slot" style={{ display: 'flex' }}>
+          <div className="duel-card-slot">
             <EraCard
               fighter={fighter}
               era="new"
