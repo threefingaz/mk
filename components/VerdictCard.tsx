@@ -88,10 +88,11 @@ export function VerdictCard({ result }: { result: RunResult }) {
   const unlocked = result.defied !== null;
   const dom: Era = result.oldPicks >= 5 ? 'old' : 'new';
   const arch = result.archetype;
-  // Destructure both `ref` and `style` from the hook so the linter's
-  // react-hooks/refs check doesn't mistake `tilt.style` for a ref access
-  // (the rule flags any property access on an object that also holds a ref).
-  const { ref: tiltRef, style: tiltStyle } = useTilt(8);
+  // Destructure `ref` from the hook so it can be attached to the outer card.
+  // The hook owns the math — live `--rx`/`--ry`/`--tilt-scale` values flow
+  // through CSS custom properties written directly on the ref's element,
+  // composed into the `transform` by the `.tilt` rule in `app/globals.css`.
+  const { ref: tiltRef } = useTilt<HTMLDivElement>(8);
 
   // Sort pick rows back into FIGHTERS canonical order so the grid is stable
   // across runs (different orders shouldn't shuffle the grid layout).
@@ -111,7 +112,7 @@ export function VerdictCard({ result }: { result: RunResult }) {
   // square or letterboxed container).
   return (
     <div
-      ref={tiltRef as React.RefObject<HTMLDivElement>}
+      ref={tiltRef}
       data-testid="verdict-card"
       data-mode={unlocked ? 'unlocked' : 'n1'}
       className="tilt"
@@ -121,7 +122,6 @@ export function VerdictCard({ result }: { result: RunResult }) {
         aspectRatio: '4 / 5',
         background: '#000',
         overflow: 'hidden',
-        ...tiltStyle,
       }}
     >
       {/* Dominant-era background fills the whole card — the era's tracking

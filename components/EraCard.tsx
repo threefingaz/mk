@@ -17,6 +17,7 @@
 
 import type { CSSProperties } from 'react';
 import type { Era, Fighter } from '@/lib/fighters';
+import { useTilt } from '@/hooks/useTilt';
 import { Portrait } from './Portrait';
 
 type NameBandMode = 'full' | 'actor';
@@ -47,11 +48,20 @@ export function EraCard({
   const showCharacter = nameBandMode === 'full';
   const showActor = nameBandMode === 'full' || nameBandMode === 'actor';
 
+  // dimmed cards opt out of the tilt — see CLAUDE.md "Tilt".
+  const tiltActive = !dimmed;
+  const { ref: tiltRef } = useTilt<HTMLButtonElement>({
+    intensity: 8,
+    hoverScale: 1.03,
+    enabled: tiltActive,
+  });
+
   const classNames = [
     'fighter-card',
     `fighter-card-${era}`,
     picked ? 'picked' : null,
     dimmed ? 'dimmed' : null,
+    tiltActive ? 'tilt' : null,
   ]
     .filter(Boolean)
     .join(' ');
@@ -239,23 +249,24 @@ export function EraCard({
     );
 
   // ── card chrome (button or div) ───────────────────────────────────────────
+  // Baseline `box-shadow` and `.picked` shadow live in `app/globals.css` so
+  // the `.fighter-card-{era}.tilt:hover` rules can layer on top via the
+  // normal cascade. The previous inline `boxShadow` here would have won
+  // specificity over the hover rules. Same for `transition`: the
+  // `.fighter-card` rule owns the full envelope (`opacity .15s, filter .15s,
+  // box-shadow 180ms ease-out`) so dimmed-state opacity/filter ease alongside
+  // the hover-lift shadow. No inline `transition` is set here — an inline
+  // string would override the stylesheet and reintroduce `transform .15s`
+  // (defeats hook-owns-math) or drop the opacity/filter easing.
   const baseStyle: CSSProperties = {
     background: isOld ? 'var(--ob-bone)' : 'var(--nb-ink)',
     border: isOld ? '2px solid var(--ob-ink)' : '2px solid var(--nb-line)',
-    boxShadow: isOld
-      ? picked
-        ? '3px 3px 0 var(--ob-ink), 6px 6px 0 var(--ob-magenta)'
-        : '2px 2px 0 var(--ob-ink)'
-      : picked
-        ? '0 14px 36px -8px oklch(0.55 0.24 27 / 0.7), 0 0 0 1px var(--nb-red)'
-        : '0 10px 36px -8px oklch(0.40 0.22 27 / 0.35), 0 4px 14px -4px rgba(0,0,0,0.6)',
     padding: 0,
     cursor: onPick ? 'pointer' : 'default',
     textAlign: 'left',
     color: 'inherit',
     borderRadius: '14px 14px 3px 3px',
     overflow: 'hidden',
-    transition: 'box-shadow .15s, transform .15s, opacity .15s, filter .15s',
     ...(dimmed
       ? {
           opacity: 0.32,
@@ -267,6 +278,7 @@ export function EraCard({
 
   return (
     <button
+      ref={tiltRef}
       type="button"
       className={classNames}
       onClick={onPick}

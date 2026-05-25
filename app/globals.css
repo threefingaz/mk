@@ -241,6 +241,37 @@ body {
   isolation: isolate;
   will-change: transform;
   text-align: left;
+  /* Baseline state-transition envelope. Note: `transform` is intentionally
+     NOT transitioned — the `useTilt` hook lerps directly via custom-property
+     mutations. The `box-shadow` transition powers the era-aware hover lift on
+     `.fighter-card-{era}.tilt:hover`. Declaring the full list here (instead
+     of splitting opacity/filter on `.fighter-card` and box-shadow on `.tilt`)
+     avoids the CSS-shorthand-replaces gotcha: when the `.tilt` class is
+     toggled in sync with dimmed→un-dimmed, opacity/filter must still ease,
+     not snap. Keep all three on the same selector. */
+  transition: opacity .15s, filter .15s, box-shadow 180ms ease-out;
+}
+
+/* Era-aware baseline + picked shadows. Defined in CSS (not as inline
+   `style.boxShadow` on the EraCard <button>) so the `.fighter-card-{era}.tilt:hover`
+   rules below can layer on top via the normal cascade. Inline styles would
+   win specificity and the hover lift — the whole point of this rule set —
+   would silently never apply at runtime. */
+.fighter-card-old {
+  box-shadow: 2px 2px 0 var(--ob-ink);
+}
+.fighter-card-old.picked {
+  box-shadow: 3px 3px 0 var(--ob-ink), 6px 6px 0 var(--ob-magenta);
+}
+.fighter-card-new {
+  box-shadow:
+    0 10px 36px -8px oklch(0.40 0.22 27 / 0.35),
+    0 4px 14px -4px rgba(0, 0, 0, 0.6);
+}
+.fighter-card-new.picked {
+  box-shadow:
+    0 14px 36px -8px oklch(0.55 0.24 27 / 0.7),
+    0 0 0 1px var(--nb-red);
 }
 .fighter-card .fc-portrait {
   flex: 0 0 auto;
@@ -419,14 +450,65 @@ body {
 .ob-portrait image-slot[data-filled] ~ .silhouette,
 .nb-portrait image-slot[data-filled] ~ .silhouette { display: none; }
 
-/* Tilt wrapper */
+/* Tilt wrapper
+   The hook (`hooks/useTilt.ts`) writes `--rx`, `--ry`, and `--tilt-scale` directly
+   onto the element via `ref.current.style.setProperty(...)` each animation frame,
+   so the transform here picks up the lerped values without a CSS transition.
+   The `box-shadow` transition that powers the era-aware `:hover` lift lives on
+   `.fighter-card` (not here) so the opacity/filter transitions for dimmed-state
+   swaps don't snap when the `.tilt` class is toggled. */
 .tilt {
-  transform: perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
-  transition: transform 120ms ease-out;
+  transform:
+    perspective(900px)
+    rotateX(var(--rx, 0deg))
+    rotateY(var(--ry, 0deg))
+    scale(var(--tilt-scale, 1));
   transform-style: preserve-3d;
 }
 .tilt-inner {
   transform: translateZ(20px);
+}
+
+/* Era-aware hover lift — speaks each era's existing shadow vocabulary so the
+   "card rises off the page" affordance is communicated in-language. Old uses
+   the brutalist hard-offset stack (echoes the picked-state shadow at higher
+   amplitude); new uses a soft drop shadow + rim. Both scale by `--split` so
+   the global era-intensity dial keeps working. NEVER harmonize these two.
+   Gated on both `prefers-reduced-motion: no-preference` AND
+   `(hover: hover) and (pointer: fine)` so the hover state is never even
+   defined under reduced motion OR on touch / coarse-pointer devices (where
+   tap-synthesized `:hover` would otherwise leave the shadow stuck). The
+   baseline `.fighter-card-{era}` shadows then apply naturally on hover (no
+   `revert` fallback needed). Mirrors the matching bails in `useTilt`. */
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  .fighter-card-old.tilt:hover {
+    box-shadow:
+      calc(4px * var(--split, 1)) calc(4px * var(--split, 1)) 0 var(--ob-ink),
+      calc(8px * var(--split, 1)) calc(8px * var(--split, 1)) 0 var(--ob-magenta);
+  }
+  .fighter-card-new.tilt:hover {
+    box-shadow:
+      0 calc(18px * var(--split, 1)) calc(48px * var(--split, 1)) -10px oklch(0.55 0.24 27 / 0.55),
+      0 calc(6px * var(--split, 1)) calc(18px * var(--split, 1)) -4px rgba(0, 0, 0, 0.7);
+  }
+  /* Picked + hover: compose the picked-state shadow (magenta echo for old,
+     red ring for new) WITH the lift offsets, so the selected-state cue isn't
+     erased by the hover lift. Higher specificity than the plain `.tilt:hover`
+     rules above (extra `.picked` class) so picked cards win the cascade.
+     Old: the lift IS a higher-amplitude magenta echo, so it already speaks
+     the picked-state vocabulary — we just amplify further on picked+hover.
+     New: stack the picked red ring on top of the lifted soft drop. */
+  .fighter-card-old.picked.tilt:hover {
+    box-shadow:
+      calc(5px * var(--split, 1)) calc(5px * var(--split, 1)) 0 var(--ob-ink),
+      calc(10px * var(--split, 1)) calc(10px * var(--split, 1)) 0 var(--ob-magenta);
+  }
+  .fighter-card-new.picked.tilt:hover {
+    box-shadow:
+      0 calc(18px * var(--split, 1)) calc(48px * var(--split, 1)) -10px oklch(0.55 0.24 27 / 0.7),
+      0 calc(6px * var(--split, 1)) calc(18px * var(--split, 1)) -4px rgba(0, 0, 0, 0.7),
+      0 0 0 1px var(--nb-red);
+  }
 }
 
 /* Brand mark */
@@ -747,6 +829,11 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .era-old::after, [data-era="old"]::after { animation: none; }
   .tilt { transition: none; transform: none !important; }
+  /* Note: the era-aware `.fighter-card-{era}.tilt:hover` shadow rules are
+     wrapped in `@media (prefers-reduced-motion: no-preference)` at their
+     definition site, so they never apply here — the baseline
+     `.fighter-card-{era}` shadow naturally remains on hover. No explicit
+     reset needed in this block. */
   /* UnlockMoment celebratory animations — suppress under reduced motion.
      The headline still appears (just no reveal-up entry), the eyebrow stops
      glitching, and the confetti particles + LIVE dot stop pulsing. The

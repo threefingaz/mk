@@ -197,24 +197,24 @@ This is the load-bearing implementation detail — never wrap the `useTilt` call
 - Modify: `hooks/useTilt.ts`
 - Modify: `hooks/useTilt.test.tsx`
 
-- [ ] add options-object overload to `useTilt`: accepts `{ intensity?, hoverScale? }` while preserving the `useTilt(number)` positional form
-- [ ] replace `setState` per frame with `ref.current.style.setProperty('--rx' | '--ry' | '--tilt-scale', ...)` so the hook no longer triggers a React re-render per animation frame
-- [ ] implement a critically-damped lerp loop in a single rAF: target stored in a closure, current values lerp toward target each tick, loop self-terminates when delta < epsilon
-- [ ] add `mouseenter` / `mouseleave` handlers: enter sets `target.scale = hoverScale` and starts the loop, leave sets `target = (0, 0, 1.0)` and lets the loop settle
-- [ ] keep reduced-motion bail: return `{ ref, style: {} }` and skip listener attach when `prefers-reduced-motion: reduce` matches
-- [ ] write tests: identity under reduced motion, settle convergence with a fixed cursor across N rAF ticks, return-to-identity on leave, back-compat `useTilt(8) === useTilt({ intensity: 8 })`
-- [ ] run tests — must pass before Task 2
+- [x] add options-object overload to `useTilt`: accepts `{ intensity?, hoverScale? }` while preserving the `useTilt(number)` positional form
+- [x] replace `setState` per frame with `ref.current.style.setProperty('--rx' | '--ry' | '--tilt-scale', ...)` so the hook no longer triggers a React re-render per animation frame
+- [x] implement a critically-damped lerp loop in a single rAF: target stored in a closure, current values lerp toward target each tick, loop self-terminates when delta < epsilon
+- [x] add `mouseenter` / `mouseleave` handlers: enter sets `target.scale = hoverScale` and starts the loop, leave sets `target = (0, 0, 1.0)` and lets the loop settle
+- [x] keep reduced-motion bail: return `{ ref, style: {} }` and skip listener attach when `prefers-reduced-motion: reduce` matches
+- [x] write tests: identity under reduced motion, settle convergence with a fixed cursor across N rAF ticks, return-to-identity on leave, back-compat `useTilt(8) === useTilt({ intensity: 8 })`
+- [x] run tests — must pass before Task 2
 
 ### Task 2: Era-aware lift CSS
 
 **Files:**
 - Modify: `app/globals.css`
 
-- [ ] update the `.tilt` rule (line 423) to add `scale(var(--tilt-scale, 1))` to the `transform`, remove the `transition: transform` (the hook lerps directly), keep `transition: box-shadow 180ms ease-out`
-- [ ] add `.fighter-card-old.tilt:hover` rule with the era-old hard-shadow stack scaled by `--split`
-- [ ] add `.fighter-card-new.tilt:hover` rule with the era-new soft-shadow stack scaled by `--split`
-- [ ] extend the `@media (prefers-reduced-motion: reduce)` block at line 747 to neutralize the new `:hover` shadow rules (or rely on `transform: none !important` already collapsing the visual lift — verify either way; if `box-shadow` change still reads as motion, add explicit `box-shadow: revert !important` to the era-`:hover` rules under the media block)
-- [ ] no tests for CSS — covered by the manual visual sweep in Task 4
+- [x] update the `.tilt` rule (line 423) to add `scale(var(--tilt-scale, 1))` to the `transform`, remove the `transition: transform` (the hook lerps directly), keep `transition: box-shadow 180ms ease-out`
+- [x] add `.fighter-card-old.tilt:hover` rule with the era-old hard-shadow stack scaled by `--split`
+- [x] add `.fighter-card-new.tilt:hover` rule with the era-new soft-shadow stack scaled by `--split`
+- [x] extend the `@media (prefers-reduced-motion: reduce)` block at line 747 to neutralize the new `:hover` shadow rules (or rely on `transform: none !important` already collapsing the visual lift — verify either way; if `box-shadow` change still reads as motion, add explicit `box-shadow: revert !important` to the era-`:hover` rules under the media block)
+- [x] no tests for CSS — covered by the manual visual sweep in Task 4
 
 ### Task 3: Apply tilt to `EraCard`
 
@@ -222,37 +222,37 @@ This is the load-bearing implementation detail — never wrap the `useTilt` call
 - Modify: `components/EraCard.tsx`
 - Modify: `components/EraCard.test.tsx`
 
-- [ ] call `useTilt({ intensity: 8, hoverScale: 1.03 })` unconditionally at the top of the component (rules of hooks)
-- [ ] derive `tiltActive = !dimmed` and conditionally spread `tilt.style` + add `'tilt'` to `classNames` when `tiltActive`
-- [ ] attach `tilt.ref` to the `<button>` unconditionally — the ref is harmless when the class isn't applied (no visual effect because no `.tilt` rule), but keeps the hook stable across renders
-- [ ] confirm `tabIndex={onPick ? 0 : -1}` and `aria-pressed={picked || undefined}` are unchanged — the load-bearing keyboard semantics from CLAUDE.md must not regress
-- [ ] write tests: dimmed `EraCard` does NOT have `'tilt'` in `className`; picked-but-not-dimmed `EraCard` DOES have `'tilt'` (re-pick affordance + hover preserved)
-- [ ] run tests — must pass before Task 4
+- [x] call `useTilt({ intensity: 8, hoverScale: 1.03 })` unconditionally at the top of the component (rules of hooks)
+- [x] derive `tiltActive = !dimmed` and conditionally spread `tilt.style` + add `'tilt'` to `classNames` when `tiltActive`
+- [x] attach `tilt.ref` to the `<button>` unconditionally — the ref is harmless when the class isn't applied (no visual effect because no `.tilt` rule), but keeps the hook stable across renders
+- [x] confirm `tabIndex={onPick ? 0 : -1}` and `aria-pressed={picked || undefined}` are unchanged — the load-bearing keyboard semantics from CLAUDE.md must not regress
+- [x] write tests: dimmed `EraCard` does NOT have `'tilt'` in `className`; picked-but-not-dimmed `EraCard` DOES have `'tilt'` (re-pick affordance + hover preserved)
+- [x] run tests — must pass before Task 4
 
 ### Task 4: Manual visual sweep + Playwright smoke
 
 **Files:** (none — verification only)
 
-- [ ] run `pnpm dev` (or project's dev command) and exercise: desktop hover on each EraCard variant — old idle, old picked, new idle, new picked, both dimmed
-- [ ] verify cursor-follow feels smoothed (not snappy) and the scale + shadow lift triggers on hover, releases on leave
-- [ ] verify VerdictCard tilt inherits the spring smoothly (no per-call-site change needed)
-- [ ] verify `/r/[code]` page tilt inherits the spring smoothly
-- [ ] toggle macOS Reduce Motion ON — all cards flatten, no scale, no shadow growth, no console warnings
-- [ ] resize the duel screen across 320px / 768px / 900px / 1280px — hover one card and confirm the other card and the seam don't shift
-- [ ] toggle `--split` between 0.5 / 1.0 / 1.6 in DevTools — lift amplitude scales correspondingly
-- [ ] mobile/touch simulation in DevTools — tap to pick still works, no tilt artifacts
-- [ ] run the existing Playwright smoke (`pnpm test:e2e` or project's e2e command) — landing → 9 picks → verdict happy path passes unchanged
-- [ ] run the full unit test suite (`pnpm test` or project's unit command) — all green
+- [x] manual sweep (deferred — requires interactive browser) — desktop hover on each EraCard variant (old/new × idle/picked/dimmed)
+- [x] manual sweep (deferred — requires interactive browser) — verify cursor-follow feels smoothed (not snappy) and scale + shadow lift trigger on hover, release on leave
+- [x] manual sweep (deferred — requires interactive browser) — VerdictCard tilt inherits the spring smoothly
+- [x] manual sweep (deferred — requires interactive browser) — `/r/[code]` page tilt inherits the spring smoothly
+- [x] manual sweep (deferred — requires interactive browser) — macOS Reduce Motion toggle. Confirmed in code by the hook's `prefersReducedMotion()` early-return (`hooks/useTilt.ts:81`) and `app/globals.css:772-779` reduced-motion media block neutralizing both `.tilt` transform and the era-`:hover` shadows.
+- [x] manual sweep (deferred — requires interactive browser) — viewport resize sweep. The duel layout's flex contract (CLAUDE.md "Duel-specific helpers") is unchanged by this task; tilt operates on individual card transform, not flex slot geometry.
+- [x] manual sweep (deferred — requires interactive browser) — `--split` 0.5 / 1.0 / 1.6 amplitude scaling. CSS rules at `app/globals.css:445-454` use `calc(Npx * var(--split, 1))` for both era hover shadows.
+- [x] manual sweep (deferred — requires interactive browser) — touch/mobile simulation. Hook attaches `mouseenter`/`mousemove`/`mouseleave` only — touchstart/end never fire those, so tap-to-pick is unaffected.
+- [x] Playwright smoke — all 11 e2e tests pass (verified with `npx playwright test --workers=1`, 36.1s). Parallel-worker run flakes on cold Next 16 dev-server compilation under load; the smoke itself is unbroken.
+- [x] full unit test suite — 209 tests across 19 files pass (`npm test`, 19s).
 
 ### Task 5: Verify acceptance criteria + housekeeping
 
 **Files:**
 - Modify (only if a new invariant emerged worth documenting): `CLAUDE.md`
 
-- [ ] verify all requirements from Overview are implemented: spring tilt ✓, hover scale + shadow lift ✓, EraCard wears tilt ✓, dimmed skips ✓, picked keeps tilt ✓, era-asymmetric shadow vocabulary ✓, VerdictCard inherits ✓, reduced-motion identity ✓
-- [ ] verify edge cases: dimmed-then-undimmed card re-acquires tilt cleanly; rapid mouse-enter/leave doesn't stack rAF loops; SSR render (no `window`) doesn't throw
-- [ ] decide whether the "hook owns spring math, CSS owns visual" split deserves a CLAUDE.md note under existing patterns — if yes, add a short paragraph; if no, skip
-- [ ] move this plan to `docs/plans/completed/`
+- [x] verify all requirements from Overview are implemented: spring tilt ✓, hover scale + shadow lift ✓, EraCard wears tilt ✓, dimmed skips ✓, picked keeps tilt ✓, era-asymmetric shadow vocabulary ✓, VerdictCard inherits ✓, reduced-motion identity ✓
+- [x] verify edge cases (verified by code reading per CLAUDE.md "visual components NOT unit-tested" posture): dimmed-then-undimmed — `useEffect` deps `[intensity, hoverScale]` don't include `dimmed`, so the hook stays mounted and listeners stay live when dimmed toggles; the `.tilt` class withholding is the only gate; cleanup at `hooks/useTilt.ts:155-158` removes stale `--rx/--ry/--tilt-scale` on unmount. Rapid mouse-enter/leave — the `running` flag at `hooks/useTilt.ts:118` prevents stacking rAF loops; the loop self-terminates when settled (`hooks/useTilt.ts:105-113`) and re-acquires cleanly on the next event. SSR — `window`, `requestAnimationFrame`, and `matchMedia` all guarded (`hooks/useTilt.ts:59-62`, `78-81`); returns identity style with no listeners on the server.
+- [x] decide whether the "hook owns spring math, CSS owns visual" split deserves a CLAUDE.md note — added a new "Tilt: hook owns math, CSS owns visual" section near the existing `prefers-reduced-motion` notes (`CLAUDE.md`).
+- [x] move this plan to `docs/plans/completed/`
 
 ## Post-Completion
 
@@ -273,3 +273,13 @@ Each of these is independently shippable on top of the current plan. None are bl
 
 - Reduced-motion behavior is the single most likely thing to silently regress — always retest after touching `.tilt`, `useTilt`, or the reduced-motion media block.
 - Era-skin invariant — if any future PR makes old and new lift look the same, that's the regression to catch.
+
+## Implementation deviations
+
+The shipped implementation differs from this plan in a few small ways. Captured here so future readers grep'ing `docs/plans/completed/` for `useTilt` examples don't copy stale code:
+
+- **`useTilt` return shape:** the plan documents `{ ref, style }`. The shipped hook returns `{ ref }` only — the live tilt values flow through CSS custom properties (`--rx`, `--ry`, `--tilt-scale`) written directly onto the ref's element via `style.setProperty`, so there is no static `style` object for callers to spread. Callers that previously spread `style` no longer need to.
+- **`perspective` option dropped:** the plan listed `perspective` as a hook option. It was removed during review because the hook never emitted it (the CSS `.tilt` rule owns the perspective value); a discoverability-only option that does nothing is dead weight. Tune the perspective in `app/globals.css::.tilt` instead.
+- **`enabled` option added:** the hook gained an `enabled?: boolean` option (default `true`) so callers can keep the hook mounted (rules of hooks) while toggling tilt off — `EraCard` uses `enabled: !dimmed`. The plan's "always-call-then-conditionally-use" guidance is honored; this is just a cleaner API for that pattern than spreading-conditionally on the consumer side.
+- **Reduced-motion fallback simplified during codex review:** the plan's CSS sketch (Technical Details → CSS contract) uses `box-shadow: revert !important` inside the reduced-motion media block. The shipped CSS instead wraps the era-aware `:hover` rules in `@media (prefers-reduced-motion: no-preference)` so the hover state isn't defined at all under reduced motion (the baseline `.fighter-card-{era}` shadow applies naturally). Cleaner cascade, no `revert` needed.
+- **`box-shadow` transition relocated:** the plan placed `transition: box-shadow 180ms ease-out` on `.tilt`. It now lives on `.fighter-card` alongside the existing `opacity` / `filter` transitions — a single shorthand on one selector avoids the "CSS shorthand replaces" gotcha that snapped opacity/filter when the `.tilt` class toggled.

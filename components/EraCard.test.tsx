@@ -31,6 +31,12 @@ describe('EraCard', () => {
       render(<EraCard fighter={raiden} era="old" />);
       expect(screen.queryByTestId('picked-stamp')).not.toBeInTheDocument();
     });
+
+    it('adds the .tilt class — idle cards opt into the cursor-following spring lift', () => {
+      const { container } = render(<EraCard fighter={raiden} era="old" />);
+      const card = container.querySelector('.fighter-card');
+      expect(card).toHaveClass('tilt');
+    });
   });
 
   describe('picked state', () => {
@@ -62,6 +68,28 @@ describe('EraCard', () => {
       // inline opacity is set as a string in React style attribute
       expect(card!.style.opacity).toBe('0.32');
       expect(card!.style.filter).toContain('grayscale');
+    });
+
+    it('does NOT add the .tilt class — a quieted card should not draw cursor attention', () => {
+      // Contract: dimmed cards opt out of the cursor-following spring lift. The
+      // hook is still called (rules of hooks), but the .tilt class is withheld
+      // so the .tilt CSS rule never fires on this element.
+      const { container } = render(<EraCard fighter={raiden} era="old" dimmed />);
+      const card = container.querySelector('.fighter-card');
+      expect(card).not.toHaveClass('tilt');
+    });
+  });
+
+  describe('hover lift (tilt opt-in)', () => {
+    it('keeps the .tilt class on a picked-but-not-dimmed card — re-pick affordance preserved', () => {
+      // Re-pick is load-bearing per CLAUDE.md "Duel pick semantics": tapping
+      // the other card before NEXT swaps the pick. The picked card must stay
+      // hoverable so the swap target reads as alive. Mirror the real Duel.tsx
+      // usage by passing `onPick` so the picked card stays interactive.
+      const { container } = render(<EraCard fighter={raiden} era="new" picked onPick={() => {}} />);
+      const card = container.querySelector('.fighter-card');
+      expect(card).toHaveClass('picked');
+      expect(card).toHaveClass('tilt');
     });
   });
 

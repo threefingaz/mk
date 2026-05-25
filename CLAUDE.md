@@ -18,9 +18,32 @@ Animations and audio default off when the user prefers reduced motion. Three loa
 
 - `hooks/useTilt.ts` — tilt animation suppressed.
 - `lib/audio.ts` — audio playback suppressed.
-- `app/globals.css` (bottom `@media (prefers-reduced-motion: reduce)` block) — CSS animations suppressed. Entries inside this block include the landing portrait marquee (`.landing-portrait-track { animation: none !important; }`); new animations must add their guard INSIDE this existing media block, not in a new one.
+- `app/globals.css` (bottom `@media (prefers-reduced-motion: reduce)` block) — CSS animations suppressed. Entries inside this block include the landing portrait marquee (`.landing-portrait-track { animation: none !important; }`); new animations must add their guard INSIDE this existing media block, not in a new one. The tilt hover lift uses the inverse pattern instead: its era-aware `:hover` shadow rules live in a separate `@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) { ... }` block, so the hover shadow is never even defined under reduced motion OR on touch / coarse-pointer devices (the baseline `.fighter-card-{era}` shadows then apply on hover naturally — no `revert` fallback needed). `hooks/useTilt.ts` mirrors both gates by bailing on reduced-motion AND on `!canHover()` before attaching listeners.
 
 **Never remove these guards.** Accessibility is non-negotiable. New animations or audio sources must add their own guard.
+
+## Tilt: hook owns math, CSS owns visual
+
+`hooks/useTilt.ts` and `app/globals.css` `.tilt` are intentionally split:
+
+- **Hook** lerps a critically-damped spring (rx, ry, scale) and writes the three values as CSS custom properties (`--rx`, `--ry`, `--tilt-scale`) **directly on `ref.current.style`** — NOT via React state. This keeps the rAF hot path out of the React render cycle. The hook returns only `{ ref }`; live values flow exclusively through the custom properties.
+- **CSS** owns the `transform` composition (`perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) scale(var(--tilt-scale,1))`) and era-aware `:hover` shadow vocabulary (`.fighter-card-old.tilt:hover` hard-offset stack vs. `.fighter-card-new.tilt:hover` soft drop) scaled by `--split`. The hook is era-agnostic so VerdictCard / `/r/[code]` / EraCard all share the same hook with no per-call-site era branching.
+- **Baseline shadows live in CSS, not inline.** `.fighter-card-old` / `.fighter-card-new` (plus their `.picked` variants) set their box-shadows via stylesheet rules so the `.tilt:hover` rules can layer on top via the normal cascade. An inline `style.boxShadow` on the `<button>` would win specificity and silently disable the entire era-hover lift — this is the regression to watch for.
+
+**API forms** — both supported, options-object preferred for new code:
+
+```ts
+const { ref } = useTilt();                         // intensity 10, hoverScale 1.03, enabled true
+const { ref } = useTilt(8);                        // positional intensity (legacy form)
+const { ref } = useTilt({ intensity: 8, hoverScale: 1.03 });
+const { ref } = useTilt({ intensity: 8, enabled: !dimmed });  // no-op opt-out
+```
+
+**`enabled: false` is load-bearing for dimmed EraCard.** Dimmed cards opt out of the tilt entirely by passing `enabled: false` — the hook attaches no listeners, runs no rAF, and clears any stale `--rx`/`--ry`/`--tilt-scale` so the cascade reads identity. Combined with withholding the `.tilt` class, the dimmed card stays quiet at both the math layer and the visual layer. Don't drop the `enabled` option; without it, listeners stay live on dimmed cards even though the `.tilt` class is withheld (visual gate only).
+
+**Always-call-then-gate-the-spread.** Rules of hooks: never wrap `useTilt(...)` in an `if`. The accepted pattern is to call it unconditionally and gate the *visual application* (the `.tilt` class) on the consumer's condition. EraCard pairs this with `enabled: !dimmed` so the hook also becomes a no-op when the class is withheld — belt and suspenders.
+
+Don't reintroduce per-frame `setState` (regression to the pre-spring implementation), don't compose `transform` in JS (lose the single tunable perspective + the reduced-motion media-block override), and don't branch on era inside the hook (regresses the inheritance contract).
 
 ## KV key naming
 
