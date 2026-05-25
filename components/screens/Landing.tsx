@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // LandingScreen — the entry surface (Task 11).
 // Ported from design_handoff_old_blood_new_blood/design-reference/src/screens.jsx
@@ -12,18 +12,18 @@
 //   - Pre-unlock chip: countdown "PLAYS UNTIL SCOREBOARD UNLOCKS · {playsUntil}".
 //   - Post-unlock chip: short scoreboard summary "BOARD LIVE · {plays} PLAYS LOGGED".
 //     Full scoreboard detail lives on /scoreboard.
-//   - Fine-print line: "9 ROUNDS · ~90 SECONDS · NO ACCOUNT" in nb-mono.
+//   - Fine-print line: "9 ROUNDS · ~90 SECONDS" in nb-mono.
 //
 // Per the plan's "Alternative" note on Task 11, this component takes `plays` and
 // `threshold` as PROPS (cleaner separation; app/page.tsx will pass them once it
 // reads /api/results in Task 25). The `scoreboardUnlocked` flag is read directly
 // from the store via a hook.
 
-import { BrandMark } from '@/components/BrandMark';
-import { MuteToggle } from '@/components/MuteToggle';
-import { useIdentityStore, useRunStore } from '@/lib/store';
-import { trackEvent } from '@/lib/analytics';
-import { setMuted as setAudioMuted, unlockAudio } from '@/lib/audio';
+import { BrandMark } from "@/components/BrandMark";
+import { MuteToggle } from "@/components/MuteToggle";
+import { useIdentityStore, useRunStore } from "@/lib/store";
+import { trackEvent } from "@/lib/analytics";
+import { setMuted as setAudioMuted, unlockAudio } from "@/lib/audio";
 
 export type LandingProps = {
   /** Total completed plays from the server. Default 0 for first render. */
@@ -58,20 +58,20 @@ export function Landing({ plays = 0, threshold = 30 }: LandingProps) {
   return (
     <div
       style={{
-        position: 'relative',
-        width: '100%',
-        minHeight: '100vh',
-        display: 'flex',
-        background: '#000',
+        position: "relative",
+        width: "100%",
+        minHeight: "100vh",
+        display: "flex",
+        background: "#000",
       }}
     >
       {/* Vertical era split — left old, right new. Hard 1px seam down middle. */}
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           inset: 0,
-          display: 'flex',
-          pointerEvents: 'none',
+          display: "flex",
+          pointerEvents: "none",
         }}
       >
         <div className="era-old" style={{ flex: 1 }} />
@@ -80,13 +80,13 @@ export function Landing({ plays = 0, threshold = 30 }: LandingProps) {
         <div
           aria-hidden
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: 0,
             bottom: 0,
-            left: '50%',
+            left: "50%",
             width: 1,
-            transform: 'translateX(-0.5px)',
-            background: 'var(--nb-line, rgba(255,255,255,0.18))',
+            transform: "translateX(-0.5px)",
+            background: "var(--nb-line, rgba(255,255,255,0.18))",
           }}
         />
       </div>
@@ -94,34 +94,33 @@ export function Landing({ plays = 0, threshold = 30 }: LandingProps) {
       {/* Foreground content */}
       <div
         style={{
-          position: 'relative',
+          position: "relative",
           zIndex: 4,
           flex: 1,
-          padding: 'clamp(48px, 6vw, 96px) clamp(24px, 5vw, 64px)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 'clamp(28px, 3.5vw, 48px)',
-          textAlign: 'center',
+          padding: "clamp(48px, 6vw, 96px) clamp(24px, 5vw, 64px)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "clamp(28px, 3.5vw, 48px)",
+          textAlign: "center",
         }}
       >
         {/* Vertical BrandMark straddling the seam (horizontally centered). */}
         <BrandMark size="clamp(28px, 4vw, 48px)" vertical />
 
-        {/* Pre / post-unlock chip. */}
+        {/* Pre / post-unlock status. Borderless + no fill so this doesn't
+            visually compete with the MuteToggle button sitting below it
+            (interactive controls own the bordered-chip treatment). */}
         {unlocked ? (
           <div
             className="nb-mono"
             style={{
-              fontSize: 'clamp(11px, 1.2vw, 14px)',
-              letterSpacing: '0.2em',
-              color: 'var(--nb-bone)',
-              padding: 'clamp(6px, 0.8vw, 10px) clamp(12px, 1.4vw, 18px)',
-              border: '1px solid var(--nb-red)',
-              background: 'rgba(0,0,0,0.4)',
-              display: 'inline-flex',
-              alignItems: 'center',
+              fontSize: "clamp(11px, 1.2vw, 14px)",
+              letterSpacing: "0.2em",
+              color: "var(--nb-bone)",
+              display: "inline-flex",
+              alignItems: "center",
               gap: 8,
             }}
           >
@@ -130,9 +129,9 @@ export function Landing({ plays = 0, threshold = 30 }: LandingProps) {
               style={{
                 width: 8,
                 height: 8,
-                background: 'var(--nb-red)',
-                display: 'inline-block',
-                animation: 'pulse-red 1.6s infinite',
+                background: "var(--nb-red)",
+                display: "inline-block",
+                animation: "pulse-red 1.6s infinite",
               }}
             />
             BOARD LIVE · {plays} PLAYS LOGGED
@@ -141,12 +140,9 @@ export function Landing({ plays = 0, threshold = 30 }: LandingProps) {
           <div
             className="nb-mono"
             style={{
-              fontSize: 'clamp(10px, 1.1vw, 13px)',
-              letterSpacing: '0.2em',
-              color: 'var(--nb-mute, rgba(255,255,255,0.7))',
-              padding: 'clamp(6px, 0.8vw, 10px) clamp(12px, 1.4vw, 18px)',
-              border: '1px solid rgba(255,255,255,0.18)',
-              background: 'rgba(0,0,0,0.4)',
+              fontSize: "clamp(10px, 1.1vw, 13px)",
+              letterSpacing: "0.2em",
+              color: "var(--nb-mute, rgba(255,255,255,0.7))",
             }}
           >
             PLAYS UNTIL SCOREBOARD UNLOCKS · {playsUntil}
@@ -167,13 +163,13 @@ export function Landing({ plays = 0, threshold = 30 }: LandingProps) {
             // AudioContext.resume() behind a user-initiated event).
             // Fire-and-forget; no-op subsequent calls.
             void unlockAudio();
-            trackEvent({ name: 'run_start' });
+            trackEvent({ name: "run_start" });
             start();
           }}
           style={{
-            fontSize: 'clamp(22px, 2.6vw, 36px)',
-            letterSpacing: '0.12em',
-            padding: 'clamp(22px, 2.5vw, 32px) clamp(56px, 7vw, 96px)',
+            fontSize: "clamp(22px, 2.6vw, 36px)",
+            letterSpacing: "0.12em",
+            padding: "clamp(22px, 2.5vw, 32px) clamp(56px, 7vw, 96px)",
             marginTop: 8,
           }}
         >
@@ -185,11 +181,11 @@ export function Landing({ plays = 0, threshold = 30 }: LandingProps) {
           className="nb-mono"
           style={{
             fontSize: 10,
-            letterSpacing: '0.22em',
-            color: 'rgba(255,255,255,0.6)',
+            letterSpacing: "0.22em",
+            color: "rgba(255,255,255,0.6)",
           }}
         >
-          9 ROUNDS · ~90 SECONDS · NO ACCOUNT
+          9 ROUNDS · ~90 SECONDS
         </small>
       </div>
     </div>
