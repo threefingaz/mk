@@ -5,8 +5,6 @@
 // `.disclaimer-ribbon` is not (yet) defined in globals.css, so the small style
 // block is inlined here per Task 5's guidance (don't add new global rules for
 // thin one-off primitives).
-//
-// Server component — pure presentational, no events.
 
 import type { CSSProperties } from 'react';
 
@@ -24,10 +22,25 @@ const ribbonStyle: CSSProperties = {
   lineHeight: 1.4,
 };
 
+const creditLinkStyle: CSSProperties = {
+  color: 'inherit',
+  textDecoration: 'underline',
+  textUnderlineOffset: 2,
+  textDecorationColor: 'oklch(1 0 0 / 0.25)',
+};
+
 export function DisclaimerRibbon() {
   return (
     <div className="disclaimer-ribbon" style={ribbonStyle}>
-      {RIBBON_TEXT}
+      {RIBBON_TEXT} ·{' '}
+      <a
+        href="https://alnikitin.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={creditLinkStyle}
+      >
+        BY ALEXEY NIKITIN
+      </a>
     </div>
   );
 }
