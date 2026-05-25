@@ -38,9 +38,29 @@ const inter = Inter({
   variable: "--f-body-new",
 });
 
+const SITE_TITLE = "OLD BLOOD // NEW BLOOD";
+const SITE_DESCRIPTION =
+  "Pick your side. Nine duels between the 1995 and 2026 Mortal Kombat casts.";
+const SITE_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "OLD BLOOD // NEW BLOOD",
-  description: "Pick your side. Nine duels between the 1995 and 2026 Mortal Kombat casts.",
+  metadataBase: new URL(SITE_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type: "website",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [{ url: "/og-default.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: ["/og-default.png"],
+  },
 };
 
 export default function RootLayout({
