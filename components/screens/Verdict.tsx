@@ -1,23 +1,24 @@
 'use client';
 
-// VerdictRevealScreen — the big reveal moment after the 9th duel (Task 13).
-// Ported from design_handoff_old_blood_new_blood/design-reference/src/screens.jsx
-// (function VerdictRevealScreen, ~lines 409-440).
+// VerdictRevealScreen — the big reveal moment after the 9th duel.
 //
-// Production deltas vs prototype:
-//   - Dominant-era background skin (era-old / era-new) on the screen wrapper,
-//     keyed off oldPicks >= 5. The prototype used a generic dark gradient.
-//   - Card data sourced from useRunStore via computeRunResult() in a useMemo.
-//   - CTAs (per plan Q2): NO "RUN AGAIN". Two buttons:
-//       SHARE              → store.advanceToShare() (phase: 'verdict' → 'share')
-//       SEE SCOREBOARD     → <Link href="/scoreboard">
+// The verdict + share screens were merged: this single screen renders the
+// VerdictCard with the reveal-up animation AND the share actions inline.
+// Share has no dedicated screen anymore.
 //
-// Side effects (recordCompletion, submitComplete) are NOT wired here — that's
-// Task 25's responsibility. This screen is read-only over store state.
+// CTAs (per Q2 — NO "RUN AGAIN"):
+//   [ COPY LINK ]  [ SAVE IMAGE ]    ← <ShareActions>
+//   [    SEE SCOREBOARD    ]
+//
+// Side effects on mount (fresh completion):
+//   - trackEvent('run_complete')
+//   - playVerdictSting()
+//   - recordCompletion(...) + submitComplete(runId) (gated by hasVoted)
 
 import { useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { VerdictCard } from '@/components/VerdictCard';
+import { ShareActions } from '@/components/ShareActions';
 import { useIdentityStore, useRunStore } from '@/lib/store';
 import { computeRunResult, dominantEraClass } from '@/lib/run-result';
 import { trackEvent } from '@/lib/analytics';
@@ -30,8 +31,6 @@ export function Verdict() {
   const runId = useRunStore((s) => s.runId);
   const crowdStats = useRunStore((s) => s.crowdStats);
   const scoreboardUnlocked = useRunStore((s) => s.scoreboardUnlocked);
-  const advanceToShare = useRunStore((s) => s.advanceToShare);
-
   // Compute once per pick/order/crowd change. Pure derivation — no side effects.
   const result = useMemo(
     () =>
@@ -197,45 +196,24 @@ export function Verdict() {
           </div>
         </div>
 
-        {/* CTAs — per Q2, NO RUN AGAIN. SHARE + SEE SCOREBOARD only. */}
-        <div
+        {/* CTAs — share actions on top, scoreboard navigation underneath. */}
+        <ShareActions picks={picks} order={order} />
+        <Link
+          href="/scoreboard"
+          className="btn-new"
+          data-testid="verdict-scoreboard"
           style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 'clamp(10px, 1.5vw, 16px)',
+            fontSize: 'clamp(13px, 1.5vw, 17px)',
+            padding: 'clamp(14px, 1.8vw, 20px)',
+            justifyContent: 'center',
+            textAlign: 'center',
+            textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
           }}
         >
-          <button
-            type="button"
-            className="btn-new btn-new-red"
-            onClick={() => advanceToShare()}
-            data-testid="verdict-share"
-            style={{
-              fontSize: 'clamp(14px, 1.6vw, 18px)',
-              padding: 'clamp(14px, 1.8vw, 20px)',
-              justifyContent: 'center',
-              textAlign: 'center',
-            }}
-          >
-            SHARE ↗
-          </button>
-          <Link
-            href="/scoreboard"
-            className="btn-new"
-            data-testid="verdict-scoreboard"
-            style={{
-              fontSize: 'clamp(14px, 1.6vw, 18px)',
-              padding: 'clamp(14px, 1.8vw, 20px)',
-              justifyContent: 'center',
-              textAlign: 'center',
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-            }}
-          >
-            SEE SCOREBOARD
-          </Link>
-        </div>
+          SEE SCOREBOARD
+        </Link>
       </div>
     </div>
   );

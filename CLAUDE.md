@@ -43,7 +43,7 @@ Keep this scheme. Renames orphan existing prod data.
 
 **No version byte.** The plan's locked-decision text mentions "version byte + 9 bits", but the implementation deliberately omits it — a version byte without a routing mechanism is premature generalization. Future format changes route via URL prefix (e.g. `/r2/<code>` for v2) so old and new codes never share a decoder. The load-bearing Q5 contract is "picks only, defied count computed live, pre-unlock shares auto-upgrade" — that remains intact.
 
-**Important**: the encoder takes picks in **canonical FIGHTERS order**, not session-shuffled order. Callers with a shuffled `order: number[]` must remap: `canonicalPicks[order[i]] = picks[i]` before calling `encodeShareCode`. `/r/[code]` and `/api/og` decode against canonical `[0..8]` so the fighter→pick pairing only matches if the encoder honored this contract (see `components/screens/Share.tsx::buildCanonicalPicks`).
+**Important**: the encoder takes picks in **canonical FIGHTERS order**, not session-shuffled order. Callers with a shuffled `order: number[]` must remap: `canonicalPicks[order[i]] = picks[i]` before calling `encodeShareCode`. `/r/[code]` and `/api/og` decode against canonical `[0..8]` so the fighter→pick pairing only matches if the encoder honored this contract (see `lib/share-code.ts::buildCanonicalPicks`, consumed by `components/ShareActions.tsx`).
 
 When the format changes in the future:
 
@@ -77,7 +77,7 @@ Don't merge them. The split is what makes the UX correct.
 ## Pragmatic testing posture
 
 - **Unit-test pure logic**: archetype math, share-code encoding/decoding, KV adapter, reducers.
-- **Playwright smoke for happy paths**: landing → 9 picks → verdict → share.
+- **Playwright smoke for happy paths**: landing → 9 picks → verdict (which includes share actions inline).
 - **Don't unit-test visual components.** The design is the spec; visual regression isn't worth maintaining at this scale.
 
 ## Resilience contract
@@ -129,7 +129,7 @@ Don't reintroduce a `picked ? undefined : ...` guard on the EraCard `onPick` pro
 
 ### Reading-column tokens
 
-`.content-column` exposes shared scale tokens as CSS custom properties (`--col-pad-y-top`, `--col-pad-y-bot`, `--col-pad-x`, `--col-gap`, `--card-stage-w`) so Verdict / Share / ReturningVisitor / `/r/[code]` don't copy-paste the same `clamp()` tuples. Inline styles consume them via `var()`. UnlockMoment doesn't read these — it sets its own inline `padding: clamp(24px, 4vw, 48px) clamp(20px, 4vw, 40px)` (both axes clamped directly, not via the shared `--col-*` vars) — and Share/ReturningVisitor intentionally render a smaller verdict-card stage so they don't read `--card-stage-w`.
+`.content-column` exposes shared scale tokens as CSS custom properties (`--col-pad-y-top`, `--col-pad-y-bot`, `--col-pad-x`, `--col-gap`, `--card-stage-w`) so Verdict / ReturningVisitor / `/r/[code]` don't copy-paste the same `clamp()` tuples. Inline styles consume them via `var()`. UnlockMoment doesn't read these — it sets its own inline `padding: clamp(24px, 4vw, 48px) clamp(20px, 4vw, 40px)` (both axes clamped directly, not via the shared `--col-*` vars) — and ReturningVisitor intentionally renders a smaller verdict-card stage so it doesn't read `--card-stage-w`.
 
 ### Reduced-motion guard for UnlockMoment
 
@@ -141,15 +141,14 @@ UnlockMoment's celebratory animations (`reveal-up` headline, `glitch-x` eyebrow,
 
 ## Analytics event taxonomy
 
-7 typed custom events fire through `lib/analytics.ts::trackEvent`. Pageviews come automatically from `<Analytics />` in `app/layout.tsx`.
+6 typed custom events fire through `lib/analytics.ts::trackEvent`. Pageviews come automatically from `<Analytics />` in `app/layout.tsx`.
 
 | Event | Props | Hook point |
 |---|---|---|
 | `run_start` | (none) | Landing FIGHT click |
 | `pick` | `fighter_id`, `era`, `step` | Each duel pick (incl. cross-era swap before NEXT — see note below) |
 | `run_complete` | `archetype`, `old_picks` | Verdict mount |
-| `share_open` | (none) | Share screen mount |
-| `share_click` | `method` ∈ {copy, download} | COPY LINK / SAVE IMAGE click on Share screen |
+| `share_click` | `method` ∈ {copy, download} | COPY LINK / SAVE IMAGE click (Verdict or ReturningVisitor) |
 | `r_view` | (none) | `/r/[code]` mount |
 | `unlock_moment_shown` | (none) | UnlockMoment mount |
 

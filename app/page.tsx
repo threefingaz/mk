@@ -7,7 +7,7 @@
 // then dispatches to the correct screen.
 //
 // Routing precedence (matches plan Task 17 + Q9):
-//   1. In-run phases take precedence: duel | verdict | share render directly.
+//   1. In-run phases take precedence: duel | verdict render directly.
 //   2. When phase === 'landing':
 //      a. scoreboardUnlocked && hasVoted && !seenUnlock  → <UnlockMoment />
 //      b. hasVoted                                       → <ReturningVisitor />
@@ -38,7 +38,6 @@ import { MuteToggle } from '@/components/MuteToggle';
 import { Landing } from '@/components/screens/Landing';
 import { Duel } from '@/components/screens/Duel';
 import { Verdict } from '@/components/screens/Verdict';
-import { Share } from '@/components/screens/Share';
 import { UnlockMoment } from '@/components/screens/UnlockMoment';
 import { ReturningVisitor } from '@/components/screens/ReturningVisitor';
 import { fetchResults } from '@/lib/api-client';
@@ -136,8 +135,6 @@ function PageBody() {
     screen = <Duel />;
   } else if (phase === 'verdict') {
     screen = <Verdict />;
-  } else if (phase === 'share') {
-    screen = <Share />;
   } else if (scoreboardUnlocked && hasVoted && !seenUnlock) {
     screen = <UnlockMoment plays={plays} />;
   } else if (hasVoted) {

@@ -98,67 +98,6 @@ describe('useRunStore — state transitions', () => {
     expect(after.phase).toBe(before.phase);
   });
 
-  it('advanceToShare() transitions phase: verdict → share', () => {
-    useRunStore.getState().start();
-    for (let i = 0; i < 9; i++) {
-      useRunStore.getState().pick('new');
-      useRunStore.getState().next();
-    }
-    expect(useRunStore.getState().phase).toBe('verdict');
-    useRunStore.getState().advanceToShare();
-    expect(useRunStore.getState().phase).toBe('share');
-  });
-
-  it('advanceToShare() is a no-op outside phase=verdict', () => {
-    useRunStore.getState().start();
-    expect(useRunStore.getState().phase).toBe('duel');
-    useRunStore.getState().advanceToShare();
-    expect(useRunStore.getState().phase).toBe('duel');
-  });
-
-  it('loadPriorRunForSharing() hydrates picks/order/runId from priorRun and jumps to share', () => {
-    // Returning-visitor case: in-progress slice is empty; we restore from
-    // identity.priorRun so the share screen has something to render.
-    const priorPicks: Era[] = ['old', 'new', 'old', 'new', 'old', 'new', 'old', 'new', 'old'];
-    const priorOrder = [4, 2, 7, 0, 8, 5, 1, 6, 3];
-    const priorRunId = 'prior-run-id-abc';
-
-    // Pre-condition: the in-progress slice is empty (just like a returning visit).
-    expect(useRunStore.getState().picks).toEqual([]);
-    expect(useRunStore.getState().order).toEqual([]);
-    expect(useRunStore.getState().runId).toBe('');
-    expect(useRunStore.getState().phase).toBe('landing');
-
-    useRunStore.getState().loadPriorRunForSharing({
-      picks: priorPicks,
-      order: priorOrder,
-      runId: priorRunId,
-    });
-
-    const s = useRunStore.getState();
-    expect(s.picks).toEqual(priorPicks);
-    expect(s.order).toEqual(priorOrder);
-    expect(s.runId).toBe(priorRunId);
-    expect(s.step).toBe(9);
-    expect(s.duelState).toBe('idle');
-    expect(s.phase).toBe('share');
-  });
-
-  it('goBackToVerdict() transitions phase: share → verdict (and is a no-op elsewhere)', () => {
-    useRunStore.getState().start();
-    for (let i = 0; i < 9; i++) {
-      useRunStore.getState().pick('old');
-      useRunStore.getState().next();
-    }
-    useRunStore.getState().advanceToShare();
-    expect(useRunStore.getState().phase).toBe('share');
-    useRunStore.getState().goBackToVerdict();
-    expect(useRunStore.getState().phase).toBe('verdict');
-    // No-op outside phase=share.
-    useRunStore.getState().goBackToVerdict();
-    expect(useRunStore.getState().phase).toBe('verdict');
-  });
-
   it('setUnlocked / setCrowdStats mutate CrowdState (not persisted)', () => {
     useRunStore.getState().setUnlocked(true);
     useRunStore.getState().setCrowdStats({

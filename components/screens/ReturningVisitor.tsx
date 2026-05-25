@@ -21,16 +21,16 @@
 //     RunResult shape.
 //   - NO replay CTA per Q2 (one run per browser). The prototype's "NEW RUN ↻"
 //     button is dropped.
-//   - SHARE YOUR VERDICT works by first hydrating the in-progress slice from
-//     priorRun via the new `loadPriorRunForSharing()` store action, then
-//     advancing phase to 'share'. Without that hydration, the share screen
-//     would render an empty verdict card.
+//   - Share actions (COPY LINK + SAVE IMAGE) render inline via <ShareActions>
+//     reading priorRun directly. The standalone Share screen was merged into
+//     Verdict — there's no separate sharing destination anymore.
 //   - Dominant-era background follows the user's original lean (oldPicks >= 5).
 
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { BrandMark } from '@/components/BrandMark';
 import { VerdictCard } from '@/components/VerdictCard';
+import { ShareActions } from '@/components/ShareActions';
 import { useIdentityStore, useRunStore } from '@/lib/store';
 import { computeRunResult, dominantEraClass } from '@/lib/run-result';
 
@@ -45,7 +45,6 @@ export function ReturningVisitor({ plays = 0, threshold = 30 }: ReturningVisitor
   const priorRun = useIdentityStore((s) => s.priorRun);
   const crowdStats = useRunStore((s) => s.crowdStats);
   const scoreboardUnlocked = useRunStore((s) => s.scoreboardUnlocked);
-  const loadPriorRunForSharing = useRunStore((s) => s.loadPriorRunForSharing);
 
   // Defensive guard: if somehow this renders without a priorRun (it
   // shouldn't, but persistence edge cases happen — e.g. corrupted localStorage),
@@ -88,14 +87,6 @@ export function ReturningVisitor({ plays = 0, threshold = 30 }: ReturningVisitor
 
   const dominant = dominantEraClass(liveResult.oldPicks);
   const sinceUnlock = scoreboardUnlocked ? Math.max(0, plays - threshold) : 0;
-
-  const handleShare = () => {
-    loadPriorRunForSharing({
-      picks: priorRun.picks,
-      order: priorRun.order,
-      runId: priorRun.runId,
-    });
-  };
 
   return (
     <div
@@ -230,45 +221,24 @@ export function ReturningVisitor({ plays = 0, threshold = 30 }: ReturningVisitor
           </div>
         </div>
 
-        {/* CTAs — per Q2, NO replay. SEE SCOREBOARD + SHARE YOUR VERDICT. */}
-        <div
+        {/* CTAs — share actions inline; scoreboard navigation underneath. */}
+        <ShareActions picks={priorRun.picks} order={priorRun.order} />
+        <Link
+          href="/scoreboard"
+          className="btn-new"
+          data-testid="returning-cta-scoreboard"
           style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 'clamp(10px, 1.5vw, 16px)',
+            fontSize: 'clamp(13px, 1.5vw, 17px)',
+            padding: 'clamp(14px, 1.8vw, 20px)',
+            justifyContent: 'center',
+            textAlign: 'center',
+            textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
           }}
         >
-          <Link
-            href="/scoreboard"
-            className="btn-new"
-            data-testid="returning-cta-scoreboard"
-            style={{
-              fontSize: 'clamp(13px, 1.5vw, 17px)',
-              padding: 'clamp(14px, 1.8vw, 20px)',
-              justifyContent: 'center',
-              textAlign: 'center',
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-            }}
-          >
-            SEE SCOREBOARD
-          </Link>
-          <button
-            type="button"
-            className="btn-new btn-new-red"
-            onClick={handleShare}
-            data-testid="returning-cta-share"
-            style={{
-              fontSize: 'clamp(13px, 1.5vw, 17px)',
-              padding: 'clamp(14px, 1.8vw, 20px)',
-              justifyContent: 'center',
-              textAlign: 'center',
-            }}
-          >
-            SHARE YOUR VERDICT ↗
-          </button>
-        </div>
+          SEE SCOREBOARD
+        </Link>
       </div>
     </div>
   );

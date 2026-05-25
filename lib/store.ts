@@ -19,7 +19,7 @@ import { FIGHTERS, type Era, type FighterId } from './fighters';
 // State shapes — lifted verbatim from the plan's `## Technical Details`.
 // ---------------------------------------------------------------------------
 
-export type Phase = 'landing' | 'duel' | 'verdict' | 'share';
+export type Phase = 'landing' | 'duel' | 'verdict';
 
 export type DuelState = 'idle' | 'pickedOld' | 'pickedNew';
 
@@ -133,12 +133,9 @@ export type RunStore = RunState &
      */
     recordPickAndSubmit: (era: Era) => void;
     next: () => void;
-    advanceToShare: () => void;
-    goBackToVerdict: () => void;
     setUnlocked: (b: boolean) => void;
     setCrowdStats: (stats: CrowdState['crowdStats']) => void;
     setUnlockProgress: (progress: { plays: number; threshold: number }) => void;
-    loadPriorRunForSharing: (prior: Pick<RunResult, 'picks' | 'order' | 'runId'>) => void;
   };
 
 const RUN_INITIAL: RunState & CrowdState = {
@@ -259,31 +256,9 @@ export const useRunStore = create<RunStore>()(
           };
         }),
 
-      advanceToShare: () =>
-        set((s) => (s.phase === 'verdict' ? { ...s, phase: 'share' } : s)),
-
-      goBackToVerdict: () =>
-        set((s) => (s.phase === 'share' ? { ...s, phase: 'verdict' } : s)),
-
       setUnlocked: (b) => set({ scoreboardUnlocked: b }),
       setCrowdStats: (stats) => set({ crowdStats: stats }),
       setUnlockProgress: ({ plays, threshold }) => set({ plays, threshold }),
-
-      // Used by the ReturningVisitor screen (Task 16) when the user clicks
-      // SHARE YOUR VERDICT. The in-progress slice is empty for a returning
-      // visitor — the share screen reads picks/order/runId from this store,
-      // so we hydrate them from the persisted priorRun before transitioning
-      // phase to 'share'. step is set to 9 (run complete) and duelState
-      // reset to 'idle' so the share screen sees a coherent "post-run" state.
-      loadPriorRunForSharing: (prior) =>
-        set({
-          picks: prior.picks,
-          order: prior.order,
-          runId: prior.runId,
-          step: 9,
-          duelState: 'idle',
-          phase: 'share',
-        }),
     }),
     {
       name: 'mk-run',
