@@ -1,10 +1,16 @@
 'use client';
 
-// MuteToggle — bottom-right affordance for the audio mute state.
+// MuteToggle — audio mute affordance.
 //
-// Currently a pure controlled component: parent passes `muted` and `onToggle`.
-// Task 17/17b will wire it to the Zustand identity slice (created in Task 9)
-// at the layout level so callers don't have to thread props.
+// Two layout variants share the same visual treatment and labels:
+//   default       — position: fixed at bottom-right of the viewport.
+//                   Persistent overlay during in-run screens (Duel / Verdict /
+//                   Share) where the user might want to toggle audio mid-flow.
+//   inline=true   — normal-flow inline-flex, no positioning. Used on the
+//                   Landing screen above the FIGHT button so the choice is
+//                   front-and-center before the first audio plays.
+//
+// Pure controlled component: parent passes `muted` and `onToggle`.
 //
 // Labels:
 //   muted=true  → "SOUND OFF · TAP TO ENABLE"
@@ -16,10 +22,7 @@
 
 import type { CSSProperties } from 'react';
 
-const buttonStyle: CSSProperties = {
-  position: 'fixed',
-  right: 12,
-  bottom: 12,
+const baseStyle: CSSProperties = {
   minWidth: 44,
   minHeight: 44,
   padding: '10px 14px',
@@ -34,6 +37,13 @@ const buttonStyle: CSSProperties = {
   letterSpacing: '0.12em',
   textTransform: 'uppercase',
   cursor: 'pointer',
+};
+
+const fixedStyle: CSSProperties = {
+  ...baseStyle,
+  position: 'fixed',
+  right: 12,
+  bottom: 12,
   zIndex: 50,
 };
 
@@ -49,15 +59,18 @@ const dotStyle: CSSProperties = {
 export function MuteToggle({
   muted,
   onToggle,
+  inline = false,
 }: {
   muted: boolean;
   onToggle: () => void;
+  /** When true, renders in normal flow (no `position: fixed`). Default false. */
+  inline?: boolean;
 }) {
   return (
     <button
       type="button"
       className="mute-toggle"
-      style={buttonStyle}
+      style={inline ? baseStyle : fixedStyle}
       onClick={onToggle}
       aria-pressed={!muted}
       aria-label={muted ? 'Enable sound' : 'Mute sound'}

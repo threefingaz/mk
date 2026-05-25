@@ -588,12 +588,18 @@ body {
    design-reference/src/screens.jsx::DuelScreen ~L173, originally
    `gridTemplateColumns: 1fr 1fr; gap: 6` — implemented here as flex-row
    for specificity hygiene; see desktop block below). The era-split
-   background is the only divider on mobile — no central seam. */
+   background is the only divider on mobile — no central seam.
+
+   `align-items: center` (not `stretch`) so each card hugs its natural
+   content height (portrait 4/5 aspect + top/bottom bands) instead of
+   stretching to fill the wrapper. Without this the cards inherit the
+   wrapper's `flex: 1` height and grow empty space below the name band
+   — visually broken on tall mobile viewports. */
 .duel-cards {
   display: flex;
   flex-direction: row;
   gap: 6px;
-  align-items: stretch;
+  align-items: center;
   min-height: 0;
 }
 .duel-card-slot {

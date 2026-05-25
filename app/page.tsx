@@ -13,9 +13,11 @@
 //      b. hasVoted                                       → <ReturningVisitor />
 //      c. else                                           → <Landing />
 //
-// Persistent overlays render regardless of phase: <MuteToggle> (position:
-// fixed at bottom-right of the viewport) + <DisclaimerRibbon> (normal-flow
-// `<div>` rendered at the bottom of the page after the cap-lift, full-bleed).
+// Persistent overlays render regardless of phase: <DisclaimerRibbon>
+// (normal-flow `<div>` rendered at the bottom of the page after the cap-lift,
+// full-bleed). <MuteToggle> renders fixed at bottom-right of the viewport on
+// every screen EXCEPT Landing, which has its own inline MuteToggle above the
+// FIGHT button (front-and-center before the first audio plays).
 //
 // Phase 2 (Task 25): crowd state comes from /api/results via the resilience
 // client (lib/api-client.ts). Failures resolve to a synthesized pre-unlock
@@ -121,11 +123,15 @@ function PageBody() {
   // ── Render selection ─────────────────────────────────────────────────────
 
   let screen: React.ReactNode;
+  // Track whether Landing is being rendered so we can suppress the global
+  // fixed MuteToggle (Landing renders its own inline above the FIGHT button).
+  let isLanding = false;
 
   if (!hydrated) {
     // SSR-safe default. First render on the client (pre-rehydration) and the
     // server render both end up here. Pre-paints the most-common state.
     screen = <Landing plays={plays} threshold={threshold} />;
+    isLanding = true;
   } else if (phase === 'duel') {
     screen = <Duel />;
   } else if (phase === 'verdict') {
@@ -138,27 +144,31 @@ function PageBody() {
     screen = <ReturningVisitor plays={plays} threshold={threshold} />;
   } else {
     screen = <Landing plays={plays} threshold={threshold} />;
+    isLanding = true;
   }
 
   return (
     <main style={PAGE_FRAME_STYLE}>
       {screen}
-      {/* Persistent overlays — render regardless of phase. */}
-      <MuteToggle
-        muted={muted}
-        onToggle={() => {
-          const nextMuted = !muted;
-          // Push the new muted state into the audio module synchronously so
-          // the useEffect bridge doesn't race with unlockAudio()'s
-          // tryStartBgLoop() — otherwise clicking to mute can briefly start
-          // the bg loop with a cached sample.
-          setAudioMuted(nextMuted);
-          setMuted(nextMuted);
-          // The toggle click is a valid user gesture for the AudioContext,
-          // but only worth unlocking on the unmute direction.
-          if (!nextMuted) void unlockAudio();
-        }}
-      />
+      {/* Persistent overlays — render regardless of phase, EXCEPT the
+          MuteToggle on Landing (Landing has its own inline copy). */}
+      {!isLanding && (
+        <MuteToggle
+          muted={muted}
+          onToggle={() => {
+            const nextMuted = !muted;
+            // Push the new muted state into the audio module synchronously so
+            // the useEffect bridge doesn't race with unlockAudio()'s
+            // tryStartBgLoop() — otherwise clicking to mute can briefly start
+            // the bg loop with a cached sample.
+            setAudioMuted(nextMuted);
+            setMuted(nextMuted);
+            // The toggle click is a valid user gesture for the AudioContext,
+            // but only worth unlocking on the unmute direction.
+            if (!nextMuted) void unlockAudio();
+          }}
+        />
+      )}
       <DisclaimerRibbon />
     </main>
   );

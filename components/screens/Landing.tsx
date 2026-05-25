@@ -20,9 +20,10 @@
 // from the store via a hook.
 
 import { BrandMark } from '@/components/BrandMark';
-import { useRunStore } from '@/lib/store';
+import { MuteToggle } from '@/components/MuteToggle';
+import { useIdentityStore, useRunStore } from '@/lib/store';
 import { trackEvent } from '@/lib/analytics';
-import { unlockAudio } from '@/lib/audio';
+import { setMuted as setAudioMuted, unlockAudio } from '@/lib/audio';
 
 export type LandingProps = {
   /** Total completed plays from the server. Default 0 for first render. */
@@ -35,6 +36,21 @@ export function Landing({ plays = 0, threshold = 30 }: LandingProps) {
   // Read unlock state from the store directly (per Task 11 spec).
   const unlocked = useRunStore((s) => s.scoreboardUnlocked);
   const start = useRunStore((s) => s.start);
+
+  // Inline MuteToggle lives directly above the FIGHT button so the audio
+  // choice is front-and-center before the first sample plays. The global
+  // fixed MuteToggle is suppressed on Landing (see app/page.tsx) to avoid
+  // a duplicate control. Toggle logic mirrors app/page.tsx: sync audio
+  // module + identity store, and treat an unmute click as the gesture
+  // that unlocks the AudioContext.
+  const muted = useIdentityStore((s) => s.muted);
+  const setMuted = useIdentityStore((s) => s.setMuted);
+  const handleMuteToggle = () => {
+    const nextMuted = !muted;
+    setAudioMuted(nextMuted);
+    setMuted(nextMuted);
+    if (!nextMuted) void unlockAudio();
+  };
 
   // Derive playsUntil from the (threshold - plays) delta, clamped to 0+.
   const playsUntil = Math.max(0, threshold - plays);
@@ -136,6 +152,10 @@ export function Landing({ plays = 0, threshold = 30 }: LandingProps) {
             PLAYS UNTIL SCOREBOARD UNLOCKS · {playsUntil}
           </div>
         )}
+
+        {/* Sound toggle — inline above the FIGHT button so the choice is
+            visible before the first audio plays. */}
+        <MuteToggle muted={muted} onToggle={handleMuteToggle} inline />
 
         {/* Primary CTA — FIGHT. */}
         <button
