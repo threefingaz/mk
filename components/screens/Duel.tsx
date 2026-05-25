@@ -321,6 +321,9 @@ export function Duel() {
             onClick={() => next()}
             data-testid="duel-next"
             style={{
+              position: 'sticky',
+              bottom: 'max(env(safe-area-inset-bottom, 12px), 12px)',
+              zIndex: 5,
               alignSelf: 'stretch',
               textAlign: 'center',
               justifyContent: 'center',

@@ -50,12 +50,15 @@ import { useHydrated } from '@/hooks/useHydrated';
 // its own content max-width via inline `clamp()` + the `.content-column`
 // helper in globals.css. Era backdrops naturally fill the viewport at any
 // width because they use absolute-positioned `.era-old` / `.era-new` halves.
+// `overflow: clip` (not hidden) so descendants can use position: sticky
+// against the document scroll. `clip` clips visually like `hidden` but does
+// NOT establish a scroll container, so sticky's anchor walks up to the body.
 const PAGE_FRAME_STYLE = {
   width: '100%',
   minHeight: '100vh',
   position: 'relative' as const,
   background: '#000',
-  overflow: 'hidden' as const,
+  overflow: 'clip' as const,
 };
 
 function PageBody() {
