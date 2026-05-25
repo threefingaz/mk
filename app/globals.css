@@ -575,6 +575,44 @@ body {
 }
 
 /* ─────────────────────────────────────────────────────────
+   Landing portrait marquee — vertical scrolling backdrop.
+   Old portraits drift downward on the left era half; new
+   portraits drift upward on the right era half. The duplicate-
+   list + translateY(-50%) trick yields a seamless loop without
+   measuring DOM in JS. Subtle (opacity 0.25) and decorative —
+   the FIGHT CTA stays dominant via a center vignette layer.
+   Suppressed under prefers-reduced-motion (see media block).
+   ───────────────────────────────────────────────────────── */
+@keyframes landing-scroll-down { from { transform: translateY(-50%); } to { transform: translateY(0); } }
+@keyframes landing-scroll-up   { from { transform: translateY(0); }   to { transform: translateY(-50%); } }
+
+.landing-portrait-column {
+  position: absolute; inset: 0;
+  overflow: hidden;
+  opacity: 0.25;
+  pointer-events: none;
+}
+.landing-portrait-track {
+  display: flex; flex-direction: column;
+  /* No `gap` here: flex gap only inserts space BETWEEN items, not after
+     the last one. With 18 children (9 unique × 2 for the seamless-loop
+     duplicate-list trick), gap would give track height = 18·slot + 17·gap,
+     so translateY(-50%) shifts by 9·slot + 8.5·gap — half a gap short of
+     where item 9 should land on top of item 0. That's a ~4-10px jump once
+     per 60s loop boundary. Instead each slot owns its trailing spacing
+     via `margin-bottom`, so track height = 18·(slot + margin) and
+     translateY(-50%) lands exactly on 9·(slot + margin). Perfect seam. */
+}
+.landing-portrait-track[data-dir="down"] { animation: landing-scroll-down 60s linear infinite; }
+.landing-portrait-track[data-dir="up"]   { animation: landing-scroll-up   60s linear infinite; }
+
+.landing-portrait-slot {
+  width: clamp(120px, 32vw, 220px);
+  margin: 0 auto clamp(8px, 1.5vw, 20px);
+  flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────────────
    Desktop layout — progressive enhancement at ≥900px.
    v1 is mobile-first; the desktop pass (see docs/plans/
    completed/20260524-desktop-layout.md) flips select layouts
@@ -716,4 +754,6 @@ body {
      class name in sync with `components/screens/UnlockMoment.tsx`. */
   .unlock-celebration,
   .unlock-celebration * { animation: none !important; }
+  /* Landing portrait marquee — freeze both columns under reduced motion. */
+  .landing-portrait-track { animation: none !important; }
 }

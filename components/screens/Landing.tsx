@@ -20,6 +20,7 @@
 // from the store via a hook.
 
 import { BrandMark } from "@/components/BrandMark";
+import { LandingPortraitColumn } from "@/components/LandingPortraitColumn";
 import { MuteToggle } from "@/components/MuteToggle";
 import { useIdentityStore, useRunStore } from "@/lib/store";
 import { trackEvent } from "@/lib/analytics";
@@ -74,8 +75,35 @@ export function Landing({ plays = 0, threshold = 30 }: LandingProps) {
           pointerEvents: "none",
         }}
       >
-        <div className="era-old" style={{ flex: 1 }} />
-        <div className="era-new" style={{ flex: 1 }} />
+        {/* .era-old / .era-new already declare `position: relative` and
+            `overflow: hidden` in globals.css (~L79-80, ~L180-181) — no need
+            to repeat them inline. `flex: 1` is the only layout-level value
+            the inline style adds.
+
+            Stacking note (intentional, asymmetric per era): the marquee
+            column nests INSIDE .era-old / .era-new but composites
+            differently against each side's pseudo-elements.
+            - .era-old: ::before (scanlines, z=2, mix-blend-mode: multiply)
+              and ::after (tape-tracking, z=3) paint OVER the marquee
+              (z=auto) — both via explicit z-index in globals.css.
+            - .era-new: ::before (grid) and ::after (lightning) declare
+              NO z-index, so they participate in the parent's stacking
+              context at z=auto and resolve by DOM order. Result: ::before
+              paints first, then the marquee column, then ::after — so
+              grid is BELOW the marquee, lightning is ABOVE it.
+            Either way, the marquee is a decorative backdrop (opacity
+            0.25) and era treatments compositing over it is the intended
+            "subtle behind the FIGHT CTA" effect — same end result, even
+            though the mechanism differs per era. Don't promote .era-old
+            / .era-new to their own stacking contexts (would break the
+            era CSS contract) or lift the marquee out — both regress
+            silently. */}
+        <div className="era-old" style={{ flex: 1 }}>
+          <LandingPortraitColumn era="old" direction="down" />
+        </div>
+        <div className="era-new" style={{ flex: 1 }}>
+          <LandingPortraitColumn era="new" direction="up" />
+        </div>
         {/* 1px seam straddling the split. */}
         <div
           aria-hidden
@@ -87,6 +115,30 @@ export function Landing({ plays = 0, threshold = 30 }: LandingProps) {
             width: 1,
             transform: "translateX(-0.5px)",
             background: "var(--nb-line, rgba(255,255,255,0.18))",
+            zIndex: 2,
+          }}
+        />
+        {/* Center vignette — darkens the marquee at the seam where text lives,
+            leaves it visible at the edges so the motion still reads.
+            Stacking note: .era-old::after paints at z-index: 3 (globals.css
+            ~L111); .era-new::after declares no z-index (z=auto). Neither
+            .era-* wrapper forms its own stacking context (position: relative
+            without z-index), so all those pseudo-elements participate in the
+            parent flex container's context. The vignette (z=3) must paint
+            AFTER them to dim the seam — guaranteed today because it comes
+            LATER in document order than both .era-old and .era-new (DOM
+            order breaks z-index ties at z=3 against .era-old::after, and
+            z=3 trivially beats z=auto for .era-new::after). Don't reorder
+            the JSX without also assigning explicit z-indices. */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 3,
+            pointerEvents: "none",
+            background:
+              "radial-gradient(ellipse at center, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 35%, transparent 70%)",
           }}
         />
       </div>

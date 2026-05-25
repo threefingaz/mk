@@ -18,7 +18,7 @@ Animations and audio default off when the user prefers reduced motion. Three loa
 
 - `hooks/useTilt.ts` — tilt animation suppressed.
 - `lib/audio.ts` — audio playback suppressed.
-- `app/globals.css` (bottom `@media (prefers-reduced-motion: reduce)` block) — CSS animations suppressed.
+- `app/globals.css` (bottom `@media (prefers-reduced-motion: reduce)` block) — CSS animations suppressed. Entries inside this block include the landing portrait marquee (`.landing-portrait-track { animation: none !important; }`); new animations must add their guard INSIDE this existing media block, not in a new one.
 
 **Never remove these guards.** Accessibility is non-negotiable. New animations or audio sources must add their own guard.
 

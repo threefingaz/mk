@@ -61,7 +61,7 @@ Era invariants (the visual split between `[data-era="old"]` and `[data-era="new"
 
 | Route | Purpose |
 |---|---|
-| `/` | Landing → 9 duels → verdict → share state machine. |
+| `/` | Landing → 9 duels → verdict → share state machine. Landing renders a vertical portrait marquee backdrop (old drifts down on the left half, new drifts up on the right), suppressed under `prefers-reduced-motion`. |
 | `/scoreboard` | Aggregate crowd stats (locked countdown pre-unlock, 9-row table post-unlock). |
 | `/r/[code]` | A friend's verdict (share-link landing). Auto-upgrades from n1 to unlocked once the board flips. |
 | `POST /api/vote` | Per-pick vote counter increment. Rate-limited 120/IP/hour. |
@@ -73,7 +73,7 @@ Era invariants (the visual split between `[data-era="old"]` and `[data-era="new"
 
 The app ships with silent silhouette fallbacks. Drop production assets in as they arrive — no code changes needed.
 
-- **Portraits**: `public/portraits/<id>-<era>.jpg` (e.g. `public/portraits/scorpion-old.jpg`). Missing files render `<Silhouette>` SVG fallback.
+- **Portraits**: `public/portraits/<id>-<era>.jpg` (e.g. `public/portraits/scorpion-old.jpg`). Used by duel cards AND the Landing marquee backdrop; missing files render the `<Silhouette>` SVG fallback in both contexts.
 - **Audio**: `public/audio/` per the slot manifest (era impacts, era voices, sting, bg loop). Missing files play silently — no console errors, no UI failures.
 
 ## Deploy

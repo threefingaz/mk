@@ -18,11 +18,20 @@ export function Portrait({
   era,
   silhouette,
   className,
+  loading,
+  decoding,
 }: {
   fighterId: FighterId;
   era: Era;
   silhouette: SilhouetteKind;
   className?: string;
+  /** Optional `<img loading>` passthrough. Decorative callers (e.g. the
+   *  Landing marquee) pass `"lazy"` so eagerly-loaded portraits don't
+   *  compete with the FIGHT button for first-paint bandwidth. */
+  loading?: 'eager' | 'lazy';
+  /** Optional `<img decoding>` passthrough. Decorative callers pass
+   *  `"async"` to keep decode work off the main paint path. */
+  decoding?: 'sync' | 'async' | 'auto';
 }) {
   const [errored, setErrored] = useState(false);
 
@@ -40,6 +49,8 @@ export function Portrait({
         <img
           src={portraitFor(fighterId, era)}
           alt={`${fighterId} (${era})`}
+          loading={loading}
+          decoding={decoding}
           onError={() => setErrored(true)}
           style={{
             position: 'absolute',
