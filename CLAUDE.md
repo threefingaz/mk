@@ -149,7 +149,7 @@ UnlockMoment's celebratory animations (`reveal-up` headline, `glitch-x` eyebrow,
 | `pick` | `fighter_id`, `era`, `step` | Each duel pick (incl. cross-era swap before NEXT — see note below) |
 | `run_complete` | `archetype`, `old_picks` | Verdict mount |
 | `share_open` | (none) | Share screen mount |
-| `share_click` | `method` ∈ {copy, native, download, x, instagram, tiktok} | Each share method click |
+| `share_click` | `method` ∈ {copy, download} | COPY LINK / SAVE IMAGE click on Share screen |
 | `r_view` | (none) | `/r/[code]` mount |
 | `unlock_moment_shown` | (none) | UnlockMoment mount |
 

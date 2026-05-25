@@ -1,4 +1,4 @@
-// GET /api/og — per-result preview image (Task 29).
+// GET /api/og — per-result preview image.
 //
 // Edge runtime. Renders a 1200×630 PNG via @vercel/og's ImageResponse from a
 // share code in the querystring. Used as the Open Graph image for /r/[code]
@@ -12,28 +12,22 @@
 // @vercel/kv is a thin wrapper around @upstash/redis (a `fetch`-based REST
 // client) so it runs cleanly on the edge runtime.
 //
-// Layout (per design handoff §8):
-//   Left 56%  — identity slab on .era-new background. Vertical brandmark,
-//               archetype name (~56px condensed), blurb, stats lockup
-//               (oldPicks/9 OLD · newPicks/9 NEW · defied/9 CONTRARIAN).
-//   Right 44% — hero diptych. Two side-by-side mini-cells. Picked side fully
-//               lit, other dimmed (opacity 0.4 + grayscale). Vertical seam at
-//               (oldPicks/9 * 100%) from the left of the diptych; a thin red
-//               contrarian-needle line sits at that x position.
+// Layout mirrors the in-app VerdictCard so the share image and the artifact
+// the player sees on the Share screen read as the same object:
+//   Left  (~54%): brandmark, "YOU ARE" eyebrow, big archetype display, blurb,
+//                 stats lockup, optional kicker, date.
+//   Right (~46%): 3×3 portrait grid (one cell per fighter, era-themed per the
+//                 player's choice; red ring on contrarian cells when unlocked).
+// Dominant-era background fills the whole canvas (era-old when oldPicks >= 5,
+// else era-new) — same as VerdictCard.
 //
-// Fonts (v1): system sans-serif and serif placeholders. The visual structure
-// matches the in-app card but the type doesn't exactly match Oswald/Inter.
-// v1.5 plan: subset Oswald + Inter binaries fetched at edge cold-start.
-//
-// Constraints of @vercel/og JSX (Satori):
-//   - inline styles only (no className, no CSS variables, no globals.css)
-//   - no animations, no filter chains, limited CSS subset
-//   - root must be a <div>, not a fragment
-// Every color from styles.css is approximated to its hex equivalent below.
+// Constraints of @vercel/og JSX (Satori): inline styles only, no className,
+// no CSS variables, no globals.css, no animations, limited CSS subset. Every
+// color from styles.css is approximated to its hex equivalent below.
 
 import { ImageResponse } from '@vercel/og';
 import { decodeShareCode } from '@/lib/share-code';
-import { FIGHTERS } from '@/lib/fighters';
+import { FIGHTERS, type FighterId } from '@/lib/fighters';
 import { archetypeFor } from '@/lib/archetype';
 import {
   CANONICAL_ORDER,
@@ -41,18 +35,17 @@ import {
   SHARED_RESULT_RUN_ID,
   todayUtc,
 } from '@/lib/run-result';
-import type { RunResult } from '@/lib/run-result';
+import type { PickRow, RunResult } from '@/lib/run-result';
 import { getCounts, isUnlocked } from '@/lib/kv';
 
 export const runtime = 'edge';
 
 // OKLCH → approximate hex (judgement calls from styles.css OKLCH values).
 const COLORS = {
-  // Old era
   obBone: '#e6dfc5',
   obInk: '#1f110d',
+  obInk2: '#2a1812',
   obGold: '#c89c2a',
-  // New era
   nbInk: '#080d18',
   nbInk2: '#141a2a',
   nbBone: '#f5f5f8',
@@ -91,7 +84,7 @@ export async function GET(request: Request): Promise<Response> {
     date: todayUtc(),
   });
 
-  return new ImageResponse(<OgCard result={result} />, {
+  return new ImageResponse(<OgCard result={result} origin={url.origin} />, {
     width: 1200,
     height: 630,
     headers: {
@@ -107,24 +100,44 @@ export async function GET(request: Request): Promise<Response> {
 // JSX layout. All inline styles; no className. Restricted CSS subset only.
 // ---------------------------------------------------------------------------
 
-function OgCard({ result }: { result: RunResult }) {
+function OgCard({ result, origin }: { result: RunResult; origin: string }) {
   const arch = archetypeFor(result.oldPicks);
-  const leanPct = (result.oldPicks / 9) * 100;
+  const dominantOld = result.oldPicks >= 5;
 
-  // Hero pick selection. Find the first contrarian pick (choice != majority).
-  // If none (n1 mode, or perfectly aligned with the crowd), use the first pick.
-  let heroIdx = 0;
-  if (result.defied !== null) {
-    const contrarian = result.picks.findIndex(
-      (p) => p.majority !== null && p.choice !== p.majority,
-    );
-    if (contrarian >= 0) {
-      heroIdx = contrarian;
-    }
-  }
-  const heroRow = result.picks[heroIdx];
-  const heroFighter = FIGHTERS.find((f) => f.id === heroRow.fighter)!;
-  const pickedOld = heroRow.choice === 'old';
+  // Sort pick rows back into FIGHTERS canonical order so the grid is stable
+  // across runs — matches VerdictCard.
+  const orderedRows: PickRow[] = FIGHTERS.map(
+    (f) => result.picks.find((p) => p.fighter === (f.id as FighterId)) as PickRow,
+  );
+
+  const unlocked = result.defied !== null;
+  const kicker = unlocked
+    ? (result.defied ?? 0) > 0
+      ? `YOU DEFIED THE CROWD ${result.defied} TIMES`
+      : 'YOU MOVED WITH THE CROWD'
+    : null;
+
+  // Dominant-era surface colors — same logical role as the era-old / era-new
+  // skins in app/globals.css.
+  const skin = dominantOld
+    ? {
+        bg: COLORS.obInk,
+        bgAlt: COLORS.obInk2,
+        text: COLORS.obBone,
+        mute: 'rgba(230, 223, 197, 0.65)',
+        accent: COLORS.obGold,
+        line: 'rgba(230, 223, 197, 0.18)',
+        displayFamily: 'serif',
+      }
+    : {
+        bg: COLORS.nbInk,
+        bgAlt: COLORS.nbInk2,
+        text: COLORS.nbBone,
+        mute: COLORS.nbMute,
+        accent: COLORS.nbRed,
+        line: COLORS.nbLine,
+        displayFamily: 'sans-serif',
+      };
 
   return (
     <div
@@ -133,34 +146,30 @@ function OgCard({ result }: { result: RunResult }) {
         height: '100%',
         display: 'flex',
         flexDirection: 'row',
-        background: '#000',
-        color: COLORS.nbBone,
+        background: skin.bg,
+        backgroundImage: `linear-gradient(135deg, ${skin.bg} 0%, ${skin.bgAlt} 100%)`,
+        color: skin.text,
         fontFamily: 'sans-serif',
       }}
     >
-      {/* LEFT — identity slab (56%) on era-new background */}
+      {/* LEFT — identity column (archetype + blurb + stats). */}
       <div
         style={{
-          width: '56%',
+          width: '54%',
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
           padding: '48px 56px',
-          background: COLORS.nbInk,
-          color: COLORS.nbBone,
-          borderRight: `1px solid ${COLORS.nbLine}`,
           boxSizing: 'border-box',
         }}
       >
-        {/* Top: inline vertical brandmark (recreated; @vercel/og can't read
-            globals.css). Two stacked cells split at a hairline. */}
+        {/* Brandmark */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignSelf: 'flex-start',
-            border: `1px solid ${COLORS.nbLine}`,
-            padding: 0,
+            border: `1px solid ${skin.line}`,
           }}
         >
           <div
@@ -183,252 +192,190 @@ function OgCard({ result }: { result: RunResult }) {
               letterSpacing: '0.18em',
               color: COLORS.nbRed,
               fontWeight: 700,
-              borderTop: `1px solid ${COLORS.nbLine}`,
+              borderTop: `1px solid ${skin.line}`,
             }}
           >
             NEW BLOOD
           </div>
         </div>
 
-        {/* Spacer */}
         <div style={{ flex: 1, display: 'flex' }} />
 
-        {/* Middle: archetype name (mock-Oswald: bold, condensed letter-spacing) */}
+        {/* "YOU ARE" eyebrow */}
         <div
           style={{
+            fontSize: 16,
+            letterSpacing: '0.3em',
+            color: skin.mute,
+            fontFamily: 'monospace',
+            display: 'flex',
+          }}
+        >
+          YOU ARE
+        </div>
+
+        {/* Archetype display name */}
+        <div
+          style={{
+            marginTop: 10,
             fontSize: 92,
-            lineHeight: 1.0,
+            lineHeight: 0.95,
             fontWeight: 800,
-            letterSpacing: '-0.02em',
-            color: COLORS.nbBone,
+            letterSpacing: dominantOld ? '0.01em' : '-0.02em',
+            color: skin.text,
             textTransform: 'uppercase',
+            fontFamily: skin.displayFamily,
             display: 'flex',
           }}
         >
           {arch.name}
         </div>
 
-        {/* Blurb (mock-Inter) */}
+        {/* Blurb */}
         <div
           style={{
-            marginTop: 18,
-            fontSize: 26,
+            marginTop: 16,
+            fontSize: 24,
             lineHeight: 1.35,
-            color: COLORS.nbMute,
-            maxWidth: 560,
+            color: skin.mute,
+            maxWidth: 540,
             display: 'flex',
           }}
         >
           {arch.blurb}
         </div>
 
-        {/* Spacer */}
         <div style={{ flex: 1, display: 'flex' }} />
 
-        {/* Stats lockup */}
+        {/* Stats lockup — mirrors VerdictCard's stats bar */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'row',
             alignItems: 'center',
-            gap: 18,
-            fontSize: 22,
+            gap: 14,
+            fontSize: 20,
             letterSpacing: '0.14em',
-            color: COLORS.nbBone,
             fontWeight: 700,
             textTransform: 'uppercase',
+            padding: '10px 14px',
+            background: 'rgba(0,0,0,0.45)',
+            border: `1px solid ${skin.line}`,
+            alignSelf: 'flex-start',
           }}
         >
           <span style={{ color: COLORS.obGold }}>{result.oldPicks}/9 OLD</span>
-          <span style={{ color: COLORS.nbMute }}>·</span>
+          <span style={{ color: skin.mute }}>·</span>
           <span style={{ color: COLORS.nbRed }}>{result.newPicks}/9 NEW</span>
           {result.defied !== null && (
             <>
-              <span style={{ color: COLORS.nbMute }}>·</span>
+              <span style={{ color: skin.mute }}>·</span>
               <span style={{ color: COLORS.nbRed }}>{result.defied}/9 CONTRARIAN</span>
             </>
           )}
         </div>
 
-        {/* Tiny footer: date stamp */}
+        {/* Kicker (unlocked only) + date row */}
         <div
           style={{
-            marginTop: 16,
-            fontSize: 14,
-            letterSpacing: '0.3em',
-            color: COLORS.nbMute,
-            fontFamily: 'monospace',
+            marginTop: 14,
             display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 16,
           }}
         >
-          {result.date}
+          <div
+            style={{
+              fontSize: 13,
+              letterSpacing: '0.3em',
+              color: skin.mute,
+              fontFamily: 'monospace',
+              display: 'flex',
+            }}
+          >
+            {result.date}
+          </div>
+          {kicker !== null && (
+            <div
+              style={{
+                fontSize: 13,
+                letterSpacing: '0.18em',
+                color: COLORS.nbRed,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                display: 'flex',
+              }}
+            >
+              {kicker}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* RIGHT — hero diptych (44%) */}
+      {/* RIGHT — 3×3 portrait grid mirroring the VerdictCard middle. */}
       <div
         style={{
-          width: '44%',
+          width: '46%',
           height: '100%',
-          position: 'relative',
+          padding: '48px 56px 48px 0',
+          boxSizing: 'border-box',
           display: 'flex',
-          flexDirection: 'row',
-          background: '#000',
         }}
       >
-        {/* OLD half */}
         <div
           style={{
-            width: '50%',
+            width: '100%',
             height: '100%',
             display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-            padding: '32px 24px',
-            background: COLORS.obInk,
-            color: COLORS.obBone,
-            opacity: pickedOld ? 1 : 0.4,
-            filter: pickedOld ? 'none' : 'grayscale(100%)',
-            boxSizing: 'border-box',
+            flexWrap: 'wrap',
+            gap: 8,
           }}
         >
-          <SilhouetteFill color={COLORS.obBone} />
-          <div
-            style={{
-              fontSize: 13,
-              letterSpacing: '0.32em',
-              color: COLORS.obGold,
-              fontFamily: 'monospace',
-              display: 'flex',
-            }}
-          >
-            1995
-          </div>
-          <div
-            style={{
-              marginTop: 6,
-              fontSize: 28,
-              lineHeight: 1.05,
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              color: COLORS.obBone,
-              fontFamily: 'serif',
-              display: 'flex',
-            }}
-          >
-            {heroFighter.name}
-          </div>
-          <div
-            style={{
-              marginTop: 4,
-              fontSize: 18,
-              color: COLORS.obBone,
-              opacity: 0.75,
-              display: 'flex',
-            }}
-          >
-            {heroFighter.oldActor}
-          </div>
+          {orderedRows.map((row) => (
+            <PickCell key={row.fighter} row={row} origin={origin} />
+          ))}
         </div>
-
-        {/* NEW half */}
-        <div
-          style={{
-            width: '50%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-            padding: '32px 24px',
-            background: COLORS.nbInk2,
-            color: COLORS.nbBone,
-            opacity: pickedOld ? 0.4 : 1,
-            filter: pickedOld ? 'grayscale(100%)' : 'none',
-            boxSizing: 'border-box',
-          }}
-        >
-          <SilhouetteFill color={COLORS.nbBone} />
-          <div
-            style={{
-              fontSize: 13,
-              letterSpacing: '0.32em',
-              color: COLORS.nbRed,
-              fontFamily: 'monospace',
-              display: 'flex',
-            }}
-          >
-            2026
-          </div>
-          <div
-            style={{
-              marginTop: 6,
-              fontSize: 28,
-              lineHeight: 1.05,
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              color: COLORS.nbBone,
-              fontFamily: 'sans-serif',
-              display: 'flex',
-            }}
-          >
-            {heroFighter.name}
-          </div>
-          <div
-            style={{
-              marginTop: 4,
-              fontSize: 18,
-              color: COLORS.nbBone,
-              opacity: 0.75,
-              display: 'flex',
-            }}
-          >
-            {heroFighter.newActor}
-          </div>
-        </div>
-
-        {/* Vertical seam split at the user's overall lean. This sits on top
-            of the two halves at the (oldPicks/9 * 100%) x-position of the
-            diptych. A thin red contrarian-needle line. */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            left: `${leanPct}%`,
-            width: 3,
-            background: COLORS.nbRed,
-            boxShadow: `0 0 18px ${COLORS.nbRed}`,
-          }}
-        />
       </div>
     </div>
   );
 }
 
-// Tall silhouette placeholder for the hero diptych. The real curated
-// portraits aren't available in the edge runtime as URLs we can rely on,
-// so the OG card uses a simple geometric silhouette block that reads as
-// "figure" at the unfurl thumbnail size. Matches the in-app Silhouette
-// fallback's role.
-function SilhouetteFill({ color }: { color: string }) {
+// Cell sizing — Satori doesn't support calc(), so dimensions are pinned in
+// pixels. Right column inner box is 1200×0.46 − 56 = 496px wide and
+// 630 − 96 = 534px tall. Three cells with 8px gaps → 160×172 cells.
+const CELL_W = 160;
+const CELL_H = 172;
+
+function PickCell({ row, origin }: { row: PickRow; origin: string }) {
+  const era = row.choice;
+  const isContrarian = row.majority !== null && row.choice !== row.majority;
+  const portraitUrl = `${origin}/portraits/${row.fighter}-${era}.jpg`;
+  const eraBg = era === 'old' ? COLORS.obInk : COLORS.nbInk;
+
   return (
     <div
       style={{
-        flex: 1,
+        width: CELL_W,
+        height: CELL_H,
+        position: 'relative',
+        background: eraBg,
+        overflow: 'hidden',
         display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-        marginBottom: 12,
+        border: isContrarian ? `2px solid ${COLORS.nbRed}` : `1px solid rgba(255,255,255,0.08)`,
+        boxSizing: 'border-box',
       }}
     >
-      <div
+      {/* eslint-disable-next-line @next/next/no-img-element -- Satori only supports <img>; no next/image at edge. */}
+      <img
+        src={portraitUrl}
+        alt=""
+        width={CELL_W}
+        height={CELL_H}
         style={{
-          width: 120,
-          height: 220,
-          background: color,
-          opacity: 0.18,
-          borderRadius: '60px 60px 8px 8px',
-          display: 'flex',
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
         }}
       />
     </div>

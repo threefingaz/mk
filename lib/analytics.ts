@@ -22,10 +22,7 @@ export type AnalyticsEvent =
   | { name: 'pick'; props: { fighter_id: string; era: 'old' | 'new'; step: number } }
   | { name: 'run_complete'; props: { archetype: string; old_picks: number } }
   | { name: 'share_open'; props?: Record<string, never> }
-  | {
-      name: 'share_click';
-      props: { method: 'copy' | 'native' | 'download' | 'x' | 'instagram' | 'tiktok' };
-    }
+  | { name: 'share_click'; props: { method: 'copy' | 'download' } }
   | { name: 'r_view'; props?: Record<string, never> }
   | { name: 'unlock_moment_shown'; props?: Record<string, never> };
 
