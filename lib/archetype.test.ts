@@ -8,9 +8,9 @@ describe('archetypeFor', () => {
       expect(archetypeFor(1).name).toBe('New Blood');
     });
 
-    it('2 and 3 → "New-School"', () => {
-      expect(archetypeFor(2).name).toBe('New-School');
-      expect(archetypeFor(3).name).toBe('New-School');
+    it('2 and 3 → "New Convert"', () => {
+      expect(archetypeFor(2).name).toBe('New Convert');
+      expect(archetypeFor(3).name).toBe('New Convert');
     });
 
     it('4 and 5 → "Switch-Hitter"', () => {
@@ -18,9 +18,9 @@ describe('archetypeFor', () => {
       expect(archetypeFor(5).name).toBe('Switch-Hitter');
     });
 
-    it('6 and 7 → "Old-School"', () => {
-      expect(archetypeFor(6).name).toBe('Old-School');
-      expect(archetypeFor(7).name).toBe('Old-School');
+    it('6 and 7 → "Old Guard"', () => {
+      expect(archetypeFor(6).name).toBe('Old Guard');
+      expect(archetypeFor(7).name).toBe('Old Guard');
     });
 
     it('8 and 9 → "90s Die-Hard"', () => {
@@ -30,14 +30,13 @@ describe('archetypeFor', () => {
   });
 
   describe('returns full archetype shape', () => {
-    it('includes range, name, blurb, lean on every match', () => {
+    it('includes range, name, lean on every match', () => {
       for (let i = 0; i <= 9; i++) {
         const a = archetypeFor(i);
         expect(a).toEqual(
           expect.objectContaining({
             range: expect.any(Array),
             name: expect.any(String),
-            blurb: expect.any(String),
             lean: expect.stringMatching(/^(old|split|new)$/),
           }),
         );
@@ -51,14 +50,6 @@ describe('archetypeFor', () => {
       // archetypeFor(5) should map to the Switch-Hitter entry verbatim.
       const a = archetypeFor(5);
       expect(a).toBe(ARCHETYPE_SETS.A.items.find((x) => x.name === 'Switch-Hitter'));
-    });
-
-    it('blurb matches design-reference verbatim for each archetype', () => {
-      expect(archetypeFor(0).blurb).toBe('All in on the new era.');
-      expect(archetypeFor(2).blurb).toBe('Mostly team 2026 with a soft spot or two.');
-      expect(archetypeFor(4).blurb).toBe('Judges each character on its own merits.');
-      expect(archetypeFor(6).blurb).toBe('Leans nostalgic with a few modern concessions.');
-      expect(archetypeFor(8).blurb).toBe('Loyal to the campy original through and through.');
     });
 
     it('lean assignment matches plan spec', () => {

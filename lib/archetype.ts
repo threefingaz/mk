@@ -11,7 +11,6 @@ export type Lean = 'old' | 'split' | 'new';
 export type Archetype = {
   range: readonly [number, number];
   name: string;
-  blurb: string;
   lean: Lean;
 };
 
@@ -26,11 +25,11 @@ export const ARCHETYPE_SETS: { readonly [K in ArchetypeSetKey]: ArchetypeSet } =
   A: {
     label: 'Brief baseline',
     items: [
-      { range: [8, 9], name: '90s Die-Hard', blurb: 'Loyal to the campy original through and through.', lean: 'old' },
-      { range: [6, 7], name: 'Old-School', blurb: 'Leans nostalgic with a few modern concessions.', lean: 'old' },
-      { range: [4, 5], name: 'Switch-Hitter', blurb: 'Judges each character on its own merits.', lean: 'split' },
-      { range: [2, 3], name: 'New-School', blurb: 'Mostly team 2026 with a soft spot or two.', lean: 'new' },
-      { range: [0, 1], name: 'New Blood', blurb: 'All in on the new era.', lean: 'new' },
+      { range: [8, 9], name: '90s Die-Hard', lean: 'old' },
+      { range: [6, 7], name: 'Old Guard', lean: 'old' },
+      { range: [4, 5], name: 'Switch-Hitter', lean: 'split' },
+      { range: [2, 3], name: 'New Convert', lean: 'new' },
+      { range: [0, 1], name: 'New Blood', lean: 'new' },
     ],
   },
 } as const;

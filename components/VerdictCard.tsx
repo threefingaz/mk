@@ -104,7 +104,7 @@ export function VerdictCard({ result }: { result: RunResult }) {
   const kicker = unlocked
     ? (result.defied ?? 0) > 0
       ? `YOU DEFIED THE CROWD ${result.defied} TIMES`
-      : 'YOU MOVED WITH THE CROWD'
+      : 'YOU RAN WITH THE CROWD'
     : null;
 
   // Outer card sets the 4:5 aspect (the parent screen scaling box also enforces
