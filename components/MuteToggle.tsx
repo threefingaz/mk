@@ -47,6 +47,16 @@ const fixedStyle: CSSProperties = {
   zIndex: 50,
 };
 
+// Top-right variant — used on screens with a sticky bottom CTA (e.g. Duel)
+// so the toggle doesn't sit on top of the CTA's right-edge tap area.
+const fixedTopRightStyle: CSSProperties = {
+  ...baseStyle,
+  position: 'fixed',
+  right: 12,
+  top: 12,
+  zIndex: 50,
+};
+
 const dotStyle: CSSProperties = {
   display: 'inline-block',
   width: 8,
@@ -60,17 +70,23 @@ export function MuteToggle({
   muted,
   onToggle,
   inline = false,
+  placement = 'bottom-right',
 }: {
   muted: boolean;
   onToggle: () => void;
   /** When true, renders in normal flow (no `position: fixed`). Default false. */
   inline?: boolean;
+  /** Fixed-mode placement. Default 'bottom-right'. Use 'top-right' on screens
+   *  with a sticky bottom CTA so the toggle doesn't obscure the CTA. Ignored
+   *  when inline=true. */
+  placement?: 'bottom-right' | 'top-right';
 }) {
+  const fixedVariant = placement === 'top-right' ? fixedTopRightStyle : fixedStyle;
   return (
     <button
       type="button"
       className="mute-toggle"
-      style={inline ? baseStyle : fixedStyle}
+      style={inline ? baseStyle : fixedVariant}
       onClick={onToggle}
       aria-pressed={!muted}
       aria-label={muted ? 'Enable sound' : 'Mute sound'}

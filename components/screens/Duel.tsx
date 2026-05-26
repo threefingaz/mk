@@ -120,7 +120,7 @@ export function Duel() {
               fontSize: 10,
               color: 'var(--nb-bone)',
               letterSpacing: '0.2em',
-              textAlign: 'right',
+              textAlign: 'left',
             }}
           >
             {String(step + 1).padStart(2, '0')}/09
@@ -272,32 +272,12 @@ export function Duel() {
           </div>
         </div>
 
-        {/* Crowd bar — post-unlock reveal, between cards and NEXT button.
-            Uses the `barfill` keyframe from globals.css (Task 2 port). */}
-        {showCrowdBar && (
-          <div
-            data-testid="duel-crowd-bar"
-            style={{
-              animation: 'barfill 600ms ease-out',
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              className="nb-mono"
-              style={{
-                fontSize: 9,
-                letterSpacing: '0.22em',
-                color: 'var(--nb-mute)',
-                marginBottom: 4,
-              }}
-            >
-              THE CROWD SAYS
-            </div>
-            <OldNewBar oldPicks={crowd.old} newPicks={crowd.new} height={16} />
-          </div>
-        )}
-
-        {/* Bottom CTA row — depends on duelState. */}
+        {/* Bottom CTA — depends on duelState.
+            When picked, crowd bar (if unlocked) + NEXT button share a single
+            sticky wrapper so they pin to viewport bottom together. The
+            MuteToggle moves to top-right while Duel is active (see
+            app/page.tsx), so the sticky wrapper has the bottom-right corner
+            clear for its own tap area. */}
         {!picked && (
           <div
             data-testid="duel-tap-hint"
@@ -315,25 +295,56 @@ export function Duel() {
         )}
 
         {picked && (
-          <button
-            type="button"
-            className="btn-new btn-new-red"
-            onClick={() => next()}
-            data-testid="duel-next"
+          <div
             style={{
               position: 'sticky',
               bottom: 'max(env(safe-area-inset-bottom, 12px), 12px)',
               zIndex: 5,
-              alignSelf: 'stretch',
-              textAlign: 'center',
-              justifyContent: 'center',
-              padding: '14px',
-              fontSize: 15,
-              letterSpacing: '0.12em',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'clamp(8px, 1.5vw, 16px)',
             }}
           >
-            NEXT FIGHTER ›
-          </button>
+            {showCrowdBar && (
+              <div
+                data-testid="duel-crowd-bar"
+                style={{
+                  animation: 'barfill 600ms ease-out',
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  className="nb-mono"
+                  style={{
+                    fontSize: 9,
+                    letterSpacing: '0.22em',
+                    color: 'var(--nb-mute)',
+                    marginBottom: 4,
+                    textAlign: 'center',
+                  }}
+                >
+                  THE CROWD SAYS
+                </div>
+                <OldNewBar oldPicks={crowd.old} newPicks={crowd.new} height={16} />
+              </div>
+            )}
+            <button
+              type="button"
+              className="btn-new btn-new-red"
+              onClick={() => next()}
+              data-testid="duel-next"
+              style={{
+                alignSelf: 'stretch',
+                textAlign: 'center',
+                justifyContent: 'center',
+                padding: '14px',
+                fontSize: 15,
+                letterSpacing: '0.12em',
+              }}
+            >
+              NEXT FIGHTER ›
+            </button>
+          </div>
         )}
       </div>
     </div>

@@ -127,6 +127,5 @@ test('Re-pick swaps the locked stamp without re-voting (server vote bound to fir
   // The cross-step reset case is exercised by the unit test
   // (`lib/store.test.ts::after next(), the next step's first pick is treated
   // as a first-pick (not a swap)`) — no need to drive UI through to the next
-  // step here, where the MuteToggle hit-test collides with the NEXT button
-  // on the e2e 390px viewport.
+  // step here.
 });

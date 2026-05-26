@@ -155,6 +155,7 @@ function PageBody() {
       {!isLanding && (
         <MuteToggle
           muted={muted}
+          placement={phase === 'duel' ? 'top-right' : 'bottom-right'}
           onToggle={() => {
             const nextMuted = !muted;
             // Push the new muted state into the audio module synchronously so
