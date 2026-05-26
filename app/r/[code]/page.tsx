@@ -72,21 +72,19 @@ export async function generateMetadata({
     '9 head-to-head duels between the 1995 Mortal Kombat cast and the 2026 reboot. Pick your side.';
 
   let archetypeName = defaultTitle;
-  let blurb = defaultDescription;
 
   try {
     const picks = decodeShareCode(code);
     const oldPicks = picks.filter((p) => p === 'old').length;
     const arch = archetypeFor(oldPicks);
     archetypeName = arch.name;
-    blurb = arch.blurb;
   } catch {
     // Decode failure — fall through with default metadata. The page handler
     // will 404 the request.
   }
 
   const title = `OLD BLOOD // NEW BLOOD · ${archetypeName}`;
-  const description = blurb;
+  const description = defaultDescription;
   const ogUrl = `${getBaseUrl()}/api/og?code=${encodeURIComponent(code)}`;
 
   return {

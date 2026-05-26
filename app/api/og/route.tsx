@@ -14,7 +14,7 @@
 //
 // Layout mirrors the in-app VerdictCard so the share image and the artifact
 // the player sees on the Share screen read as the same object:
-//   Left  (~54%): brandmark, "YOU ARE" eyebrow, big archetype display, blurb,
+//   Left  (~54%): brandmark, "YOU ARE" eyebrow, big archetype display,
 //                 stats lockup, optional kicker, date.
 //   Right (~46%): 3×3 portrait grid (one cell per fighter, era-themed per the
 //                 player's choice; red ring on contrarian cells when unlocked).
@@ -152,7 +152,7 @@ function OgCard({ result, origin }: { result: RunResult; origin: string }) {
         fontFamily: 'sans-serif',
       }}
     >
-      {/* LEFT — identity column (archetype + blurb + stats). */}
+      {/* LEFT — identity column (archetype + stats). */}
       <div
         style={{
           width: '54%',
@@ -229,20 +229,6 @@ function OgCard({ result, origin }: { result: RunResult; origin: string }) {
           }}
         >
           {arch.name}
-        </div>
-
-        {/* Blurb */}
-        <div
-          style={{
-            marginTop: 16,
-            fontSize: 24,
-            lineHeight: 1.35,
-            color: skin.mute,
-            maxWidth: 540,
-            display: 'flex',
-          }}
-        >
-          {arch.blurb}
         </div>
 
         <div style={{ flex: 1, display: 'flex' }} />
